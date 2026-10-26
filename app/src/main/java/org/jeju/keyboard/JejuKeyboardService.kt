@@ -233,50 +233,40 @@ class JejuKeyboardService : InputMethodService() {
             }
 
             else -> {
+                val shifted = if (shiftActive) {
+                    when (key) {
+                        "ㅂ" -> "ㅃ"
+                        "ㅈ" -> "ㅉ"
+                        "ㄷ" -> "ㄸ"
+                        "ㄱ" -> "ㄲ"
+                        "ㅅ" -> "ㅆ"
+                        "ㅐ" -> "ㅒ"
+                        "ㅔ" -> "ㅖ"
+                        "ㆍ" -> "ᆢ"
+                        else -> key
+                    }
+                } else {
+                    key
+                }
+
                 when {
-                    vowels.contains(key) -> inputVowel(key)
-                    leading.contains(key) -> inputConsonant(key)
-                    key == "ㆍ" -> {
+                    vowels.contains(shifted) -> inputVowel(shifted)
+                    leading.contains(shifted) -> inputConsonant(shifted)
+                    shifted == "ㆍ" || shifted == "ᆢ" -> {
                         finishComposition()
-                        connection.commitText("ㆍ", 1)
+                        connection.commitText(shifted, 1)
                     }
-                    
                     else -> {
-                        val shifted = if (shiftActive) {
-                            when (key) {
-                                "ㅂ" -> "ㅃ"
-                                "ㅈ" -> "ㅉ"
-                                "ㄷ" -> "ㄸ"
-                                "ㄱ" -> "ㄲ"
-                                "ㅅ" -> "ㅆ"
-                                "ㅐ" -> "ㅒ"
-                                "ㅔ" -> "ㅖ"
-                                "ㆍ" -> "ᆢ"
-                                else -> key
-                            }
-                        } else {
-                            key
-                        }
-
-                        when {
-                            vowels.contains(shifted) -> inputVowel(shifted)
-                            leading.contains(shifted) -> inputConsonant(shifted)
-                            else -> {
-                                finishComposition()
-                                connection.commitText(shifted, 1)
-                            }
-                        }
-
-                        if (!capsLock) {
-                            shiftActive = false
-                        }
-                    }
-
+                        finishComposition()
+                        connection.commitText(shifted, 1)
                     }
                 }
+
+                if (!capsLock) shiftActive = false
             }
         }
     }
+
 
     private fun inputConsonant(key: String) {
         val connection = currentInputConnection ?: return
