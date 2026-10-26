@@ -5,8 +5,10 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
+import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
 import android.widget.Button
 import android.widget.LinearLayout
 
@@ -16,25 +18,23 @@ class JejuKeyboardService : InputMethodService() {
 
     private val backgroundColor = Color.rgb(225, 239, 250)
     private val keyColor = Color.WHITE
-    private val specialColor = Color.rgb(188, 220, 244)
+    private val specialColor = Color.rgb(205, 229, 246)
 
-    override fun onCreateInputView(): View {
-        return buildKeyboard()
-    }
+    override fun onCreateInputView(): View = buildKeyboard()
 
     private fun buildKeyboard(): View {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(4, 8, 4, 8)
+            setPadding(2, 0, 2, 0)
             setBackgroundColor(backgroundColor)
         }
 
         val rows = if (numberMode) {
             listOf(
                 listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "0"),
-                listOf("@", "#", "$", "%", "&", "-", "+", "(", ")", "/"),
-                listOf("=", "*", "\"", "'", ":", ";", "!", "?", "⌫"),
-                listOf("ABC", "☺", "제줏말", "↵")
+                listOf("@", "#", "₩", "~", "_", "-", "+", "(", ")", "/"),
+                listOf("☺", "*", "\"", "'", ":", ";", "!", "?", "⌫"),
+                listOf("ㄱㄴㄷ", ",", "제줏말", ".", "↵")
             )
         } else {
             listOf(
@@ -44,7 +44,7 @@ class JejuKeyboardService : InputMethodService() {
                     "ㅗ", "ㅓ", "ㅏ", "ㅣ", "ㆍ"),
                 listOf("⇧", "ㅋ", "ㅌ", "ㅊ", "ㅍ",
                     "ㅠ", "ㅜ", "ㅡ", "⌫"),
-                listOf("?123", "☺", ",", "제줏말", ".", "↵")
+                listOf("?123", ",", "제줏말", ".", "↵")
             )
         }
 
@@ -56,13 +56,24 @@ class JejuKeyboardService : InputMethodService() {
 
             labels.forEach { label ->
                 val special = label in listOf(
-                    "⇧", "⌫", "?123", "ABC", "↵", "☺", "제줏말"
+                    "⇧", "⌫", "?123", "ㄱㄴㄷ", "↵"
                 )
+
+                val weight = when (label) {
+                    "제줏말" -> 4.2f
+                    "?123", "ㄱㄴㄷ" -> 1.6f
+                    "⇧", "⌫", "↵" -> 1.35f
+                    else -> 1f
+                }
 
                 val key = Button(this).apply {
                     text = label
-                    textSize = if (label == "제줏말") 13f else 18f
-                    setTextColor(Color.rgb(35, 45, 55))
+                    textSize = when (label) {
+                        "제줏말" -> 17f
+                        "ㄱㄴㄷ" -> 14f
+                        else -> 19f
+                    }
+                    setTextColor(Color.rgb(25, 32, 38))
                     typeface = Typeface.DEFAULT
                     isAllCaps = false
                     minWidth = 0
@@ -70,23 +81,29 @@ class JejuKeyboardService : InputMethodService() {
                     minHeight = 0
                     minimumHeight = 0
                     setPadding(0, 0, 0, 0)
+
                     background = GradientDrawable().apply {
-                        setColor(if (special) specialColor else keyColor)
-                        cornerRadius = 12f
+                        setColor(
+                            when {
+                                label == "," || label == "." ->
+                                    if (numberMode) keyColor else specialColor
+                                label == "제줏말" -> keyColor
+                                special -> specialColor
+                                else -> keyColor
+                            }
+                        )
+                        cornerRadius = dp(10).toFloat()
                     }
+
                     setOnClickListener { handleKey(label) }
                 }
 
-                val weight = when (label) {
-                    "제줏말" -> 2.2f
-                    "?123", "ABC", "⇧", "⌫", "↵" -> 1.4f
-                    else -> 1f
-                }
-
                 val params = LinearLayout.LayoutParams(
-                    0, dp(if (rowIndex == 3) 48 else 48), weight
+                    0,
+                    dp(if (rowIndex == 3) 62 else 58),
+                    weight
                 )
-                params.setMargins(2, 3, 2, 3)
+                params.setMargins(dp(1), dp(2), dp(1), dp(2))
                 row.addView(key, params)
             }
 
@@ -110,15 +127,45 @@ class JejuKeyboardService : InputMethodService() {
                 numberMode = true
                 setInputView(buildKeyboard())
             }
-            "ABC" -> {
+
+            "ㄱㄴㄷ" -> {
                 numberMode = false
                 setInputView(buildKeyboard())
             }
-            "⌫" -> connection.deleteSurroundingText(1, 0)
-            "↵" -> connection.commitText("\n", 1)
+
+            "⌫" -> {
+                if (!connection.deleteSurroundingText(1, 0)) {
+                    connection.sendKeyEvent(
+                        KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL)
+                    )
+                }
+            }
+
+            "↵" -> {
+                val info = currentInputEditorInfo
+                val action = info?.imeOptions?.and(
+                    EditorInfo.IME_MASK_ACTION
+                ) ?: EditorInfo.IME_ACTION_NONE
+
+                if (action != EditorInfo.IME_ACTION_NONE &&
+                    action != EditorInfo.IME_ACTION_UNSPECIFIED &&
+                    action != EditorInfo.IME_ACTION_PREVIOUS
+                ) {
+                    connection.performEditorAction(action)
+                } else {
+                    connection.sendKeyEvent(
+                        KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER)
+                    )
+                    connection.sendKeyEvent(
+                        KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER)
+                    )
+                }
+            }
+
             "제줏말" -> connection.commitText(" ", 1)
             "☺" -> connection.commitText("☺", 1)
             "⇧" -> { }
+
             else -> connection.commitText(key, 1)
         }
     }
