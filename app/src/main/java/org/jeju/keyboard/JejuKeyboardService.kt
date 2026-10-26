@@ -263,55 +263,81 @@ class JejuKeyboardService : InputMethodService() {
         }
     }
 
+    
     private fun inputVowel(key: String) {
         val connection = currentInputConnection ?: return
+        val newVowel = vowels.indexOf(key)
 
+        // A vowel typed without an initial consonant stays a jamo.
         if (lead == -1 && vowel == -1) {
-            // A vowel on its own uses the silent initial ㅇ.
-            lead = leading.indexOf("ㅇ")
-            vowel = vowels.indexOf(key)
-            updateComposition()
+            connection.commitText(key, 1)
             return
         }
 
+        // Complete a syllable that currently has only its initial consonant.
         if (vowel == -1) {
-            vowel = vowels.indexOf(key)
+            vowel = newVowel
             updateComposition()
             return
         }
 
-        val combined = vowelPairs[vowels[vowel] + key]
-        if (combined != null && tail == 0) {
+        // Combine compatible vowels only when there is no final consonant.
+        val combined = if (tail == 0) {
+            vowelPairs[vowels[vowel] + key]
+        } else {
+            null
+        }
+
+        if (combined != null) {
             vowel = vowels.indexOf(combined)
             updateComposition()
             return
         }
 
+        // A following vowel moves the final consonant to the next syllable.
         if (tail != 0) {
-            val oldTail = finals[tail]
-            val compound = finals[tail]
-            val split = finalPairs.entries.firstOrNull {
-                it.value == compound
+            val oldLead = lead
+            val oldVowel = vowel
+            val oldTail = tail
+            val oldFinal = finals[oldTail]
+
+            val cluster = finalPairs.entries.firstOrNull {
+                it.value == oldFinal
             }
 
-            finishComposition()
-
-            if (split != null) {
-                lead = leading.indexOf(split.key.last().toString())
+            // Remove the final consonant from the previous syllable.
+            tail = if (cluster != null) {
+                finals.indexOf(cluster.key.first().toString())
             } else {
-                lead = leading.indexOf(oldTail)
+                0
             }
 
-            if (lead == -1) lead = leading.indexOf("ㅇ")
-            vowel = vowels.indexOf(key)
+            updateComposition()
+            connection.finishComposingText()
+
+            // A single final becomes the next syllable's initial.
+            // For a compound final, move only its second consonant.
+            val nextInitial = if (cluster != null) {
+                cluster.key.last().toString()
+            } else {
+                oldFinal
+            }
+
+            lead = leading.indexOf(nextInitial)
+            vowel = newVowel
+            tail = 0
+
+            if (lead == -1) {
+                lead = leading.indexOf("ㅇ")
+            }
+
             updateComposition()
             return
         }
 
+        // Do not invent a silent ㅇ when a vowel is typed by itself.
         finishComposition()
-        lead = leading.indexOf("ㅇ")
-        vowel = vowels.indexOf(key)
-        updateComposition()
+        connection.commitText(key, 1)
     }
 
     private fun updateComposition() {
