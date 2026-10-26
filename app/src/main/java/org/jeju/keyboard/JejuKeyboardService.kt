@@ -11,6 +11,9 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.Button
 import android.widget.LinearLayout
+import android.view.MotionEvent
+import android.widget.PopupWindow
+import android.widget.FrameLayout
 
 class JejuKeyboardService : InputMethodService() {
 
@@ -151,7 +154,43 @@ class JejuKeyboardService : InputMethodService() {
                         cornerRadius = dp(10).toFloat()
                     }
 
-                    setOnClickListener { handleKey(label) }
+                    
+                    var popupShown = false
+
+                    setOnLongClickListener {
+                        val choices = when (label) {
+                            "ㅅ" -> if (shiftActive) listOf("ㅿ") else listOf("ㅆ", "ㅿ")
+                            "ㅂ" -> if (shiftActive) listOf("ㅸ") else listOf("ㅃ", "ㅸ")
+                            "ㅇ" -> listOf("ㆁ")
+                            "ㅎ" -> listOf("ㆆ")
+                            "ㅍ" -> listOf("ㆄ")
+                            "ㅁ" -> listOf("ㅱ")
+                            else -> emptyList()
+                        }
+
+                        if (choices.isNotEmpty()) {
+                            popupShown = true
+                            showCharacterPopup(this, choices) { character ->
+                                finishComposition()
+                                currentInputConnection?.commitText(character, 1)
+                                if (!capsLock) {
+                                    shiftActive = false
+                                    setInputView(buildKeyboard())
+                                }
+                            }
+                            true
+                        } else {
+                            false
+                        }
+                    }
+
+                    setOnClickListener {
+                        if (!popupShown) {
+                            handleKey(label)
+                        }
+                        popupShown = false
+                    }
+
                 }
 
                 val params = LinearLayout.LayoutParams(
@@ -171,6 +210,92 @@ class JejuKeyboardService : InputMethodService() {
         }
 
         return root
+    }
+
+    
+    private fun showCharacterPopup(
+        anchor: View,
+        choices: List<String>,
+        onSelected: (String) -> Unit
+    ) {
+        if (choices.isEmpty()) return
+
+        val popupContent = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            setPadding(dp(4), dp(4), dp(4), dp(4))
+            background = GradientDrawable().apply {
+                setColor(Color.WHITE)
+                cornerRadius = dp(12).toFloat()
+                setStroke(dp(1), specialColor)
+            }
+        }
+
+        val popupButtons = mutableListOf<Pair<String, Button>>()
+
+        choices.forEach { character ->
+            val popupButton = Button(this).apply {
+                text = character
+                textSize = 23f
+                isAllCaps = false
+                minWidth = dp(44)
+                minimumWidth = dp(44)
+                minHeight = dp(48)
+                minimumHeight = dp(48)
+                setPadding(dp(4), 0, dp(4), 0)
+                setTextColor(Color.rgb(25, 32, 38))
+                background = GradientDrawable().apply {
+                    setColor(specialColor)
+                    cornerRadius = dp(8).toFloat()
+                }
+            }
+
+            popupButtons.add(character to popupButton)
+            popupContent.addView(
+                popupButton,
+                LinearLayout.LayoutParams(dp(48), dp(52))
+            )
+        }
+
+        val popup = PopupWindow(
+            popupContent,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            false
+        ).apply {
+            isOutsideTouchable = false
+            elevation = dp(8).toFloat()
+        }
+
+        var selectedCharacter: String? = choices.firstOrNull()
+
+        popupButtons.forEach { (character, button) ->
+            button.setOnClickListener {
+                selectedCharacter = character
+                popup.dismiss()
+                onSelected(character)
+            }
+        }
+
+        val location = IntArray(2)
+        anchor.getLocationOnScreen(location)
+
+        popup.showAtLocation(
+            anchor,
+            Gravity.TOP or Gravity.START,
+            location[0],
+            (location[1] - dp(58)).coerceAtLeast(0)
+        )
+
+        popupContent.setOnTouchListener { _, event ->
+            if (event.action == MotionEvent.ACTION_UP) {
+                popup.dismiss()
+                selectedCharacter?.let(onSelected)
+                true
+            } else {
+                true
+            }
+        }
     }
 
     private fun handleKey(key: String) {
