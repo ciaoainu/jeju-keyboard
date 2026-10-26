@@ -15,6 +15,9 @@ import android.widget.LinearLayout
 class JejuKeyboardService : InputMethodService() {
 
     private var numberMode = false
+    private var shiftActive = false
+    private var capsLock = false
+    private var lastShiftTap = 0L
 
     private val backgroundColor = Color.rgb(225, 239, 250)
     private val keyColor = Color.WHITE
@@ -111,7 +114,7 @@ class JejuKeyboardService : InputMethodService() {
                 }
 
                 val key = Button(this).apply {
-                    text = label
+                    text = if (label == "⇧" && shiftActive) "⇪" else label
                     textSize = when (label) {
                         "제줏말" -> 17f
                         "ㄱㄴㄷ" -> 14f
@@ -205,7 +208,24 @@ class JejuKeyboardService : InputMethodService() {
                 connection.commitText("☺", 1)
             }
 
-            "⇧" -> { }
+            
+            "⇧", "⇪" -> {
+                val now = System.currentTimeMillis()
+
+                if (capsLock) {
+                    capsLock = false
+                    shiftActive = false
+                } else if (shiftActive && now - lastShiftTap < 400) {
+                    capsLock = true
+                    shiftActive = true
+                } else {
+                    shiftActive = !shiftActive
+                }
+
+                lastShiftTap = now
+                setInputView(buildKeyboard())
+            }
+
 
             "," , "." -> {
                 finishComposition()
@@ -220,9 +240,38 @@ class JejuKeyboardService : InputMethodService() {
                         finishComposition()
                         connection.commitText("ㆍ", 1)
                     }
+                    
                     else -> {
-                        finishComposition()
-                        connection.commitText(key, 1)
+                        val shifted = if (shiftActive) {
+                            when (key) {
+                                "ㅂ" -> "ㅃ"
+                                "ㅈ" -> "ㅉ"
+                                "ㄷ" -> "ㄸ"
+                                "ㄱ" -> "ㄲ"
+                                "ㅅ" -> "ㅆ"
+                                "ㅐ" -> "ㅒ"
+                                "ㅔ" -> "ㅖ"
+                                "ㆍ" -> "ᆢ"
+                                else -> key
+                            }
+                        } else {
+                            key
+                        }
+
+                        when {
+                            vowels.contains(shifted) -> inputVowel(shifted)
+                            leading.contains(shifted) -> inputConsonant(shifted)
+                            else -> {
+                                finishComposition()
+                                connection.commitText(shifted, 1)
+                            }
+                        }
+
+                        if (!capsLock) {
+                            shiftActive = false
+                        }
+                    }
+
                     }
                 }
             }
