@@ -114,7 +114,21 @@ class JejuKeyboardService : InputMethodService() {
                 }
 
                 val key = Button(this).apply {
-                    text = if (label == "⇧" && shiftActive) "⇪" else label
+                    text = when {
+                        label == "⇧" && shiftActive -> "⇪"
+                        shiftActive -> when (label) {
+                            "ㅂ" -> "ㅃ"
+                            "ㅈ" -> "ㅉ"
+                            "ㄷ" -> "ㄸ"
+                            "ㄱ" -> "ㄲ"
+                            "ㅅ" -> "ㅆ"
+                            "ㅐ" -> "ㅒ"
+                            "ㅔ" -> "ㅖ"
+                            "ㆍ" -> "ᆢ"
+                            else -> label
+                        }
+                        else -> label
+                    }
                     textSize = when (label) {
                         "제줏말" -> 17f
                         "ㄱㄴㄷ" -> 14f
