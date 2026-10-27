@@ -643,79 +643,101 @@ class JejuKeyboardService : InputMethodService() {
     private fun inputVowel(key: String) {
         val connection = currentInputConnection ?: return
         val newVowel = vowels.indexOf(key)
+        // If an obsolete initial consonant is active, combine it with this vowel.
+        if (archaicLead != null) {
+            if (vowel == -1) {
+                vowel = newVowel
+                updateComposition()
+                return
+            }
 
-        // A vowel typed without an initial consonant stays a jamo.
-        if (lead == -1 && vowel == -1) {
+            // Allow compatible vowel combinations, such as ㅗ + ㅏ = ㅘ.
+            val combined = vowelPairs[vowels[vowel] + key]
+
+            if (combined != null) {
+                vowel = vowels.indexOf(combined)
+                updateComposition()
+                return
+            }
+
+            // Finish the current obsolete-letter combination before
+            // inserting a new standalone vowel.
+            finishComposition()
             connection.commitText(key, 1)
             return
         }
 
-        // Complete a syllable that currently has only its initial consonant.
-        if (vowel == -1) {
-            vowel = newVowel
-            updateComposition()
-            return
-        }
-
-        // Combine compatible vowels only when there is no final consonant.
-        val combined = if (tail == 0) {
-            vowelPairs[vowels[vowel] + key]
-        } else {
-            null
-        }
-
-        if (combined != null) {
-            vowel = vowels.indexOf(combined)
-            updateComposition()
-            return
-        }
-
-        // A following vowel moves the final consonant to the next syllable.
-        if (tail != 0) {
-            val oldLead = lead
-            val oldVowel = vowel
-            val oldTail = tail
-            val oldFinal = finals[oldTail]
-
-            val cluster = finalPairs.entries.firstOrNull {
-                it.value == oldFinal
+            // A vowel typed without an initial consonant stays a jamo.
+            if (lead == -1 && vowel == -1) {
+                connection.commitText(key, 1)
+                return
             }
 
-            // Remove the final consonant from the previous syllable.
-            tail = if (cluster != null) {
-                finals.indexOf(cluster.key.first().toString())
+            // Complete a syllable that currently has only its initial consonant.
+            if (vowel == -1) {
+                vowel = newVowel
+                updateComposition()
+                return
+            }
+
+            // Combine compatible vowels only when there is no final consonant.
+            val combined = if (tail == 0) {
+                vowelPairs[vowels[vowel] + key]
             } else {
-                0
+                null
             }
 
-            updateComposition()
-            connection.finishComposingText()
-
-            // A single final becomes the next syllable's initial.
-            // For a compound final, move only its second consonant.
-            val nextInitial = if (cluster != null) {
-                cluster.key.last().toString()
-            } else {
-                oldFinal
+            if (combined != null) {
+                vowel = vowels.indexOf(combined)
+                updateComposition()
+                return
             }
 
-            lead = leading.indexOf(nextInitial)
-            vowel = newVowel
-            tail = 0
+            // A following vowel moves the final consonant to the next syllable.
+            if (tail != 0) {
+                val oldLead = lead
+                val oldVowel = vowel
+                val oldTail = tail
+                val oldFinal = finals[oldTail]
 
-            if (lead == -1) {
-                lead = leading.indexOf("ㅇ")
+                val cluster = finalPairs.entries.firstOrNull {
+                    it.value == oldFinal
+                }
+
+                // Remove the final consonant from the previous syllable.
+                tail = if (cluster != null) {
+                    finals.indexOf(cluster.key.first().toString())
+                } else {
+                    0
+                }
+
+                updateComposition()
+                connection.finishComposingText()
+
+                // A single final becomes the next syllable's initial.
+                // For a compound final, move only its second consonant.
+                val nextInitial = if (cluster != null) {
+                    cluster.key.last().toString()
+                } else {
+                    oldFinal
+                }
+
+                lead = leading.indexOf(nextInitial)
+                vowel = newVowel
+                tail = 0
+
+                if (lead == -1) {
+                    lead = leading.indexOf("ㅇ")
+                }
+
+                updateComposition()
+                return
             }
 
-            updateComposition()
-            return
+            // Do not invent a silent ㅇ when a vowel is typed by itself.
+            finishComposition()
+            connection.commitText(key, 1)
         }
-
-        // Do not invent a silent ㅇ when a vowel is typed by itself.
-        finishComposition()
-        connection.commitText(key, 1)
-    }
-
     
     
     private fun updateComposition() {
