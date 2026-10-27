@@ -850,47 +850,53 @@ class JejuKeyboardService : InputMethodService() {
 
         // Handle an obsolete initial consonant.
         if (archaicLead != null) {
-            val vowelText = if (vowel == -1) null else vowels[vowel]
+            val currentArchaicLead = archaicLead!!
+
+            val compatibility = archaicInitialJamo.entries
+                .firstOrNull { it.value == currentArchaicLead }
+                ?.key ?: currentArchaicLead
+
+            val vowelText = when (vowel) {
+                in 0..20 -> vowels.getOrNull(vowel)
+                else -> null
+            }
+
+            // Before a vowel is typed, display the standalone compatibility character.
+            if (vowelText == null) {
+                connection.setComposingText(compatibility, 1)
+                return
+            }
 
             val jungseong = when (vowelText) {
-                null -> ""
                 "ㆍ" -> "\u119E"
                 "ᆢ" -> "\u11A2"
                 else -> {
-                    val modernVowels = listOf(
-                        "ㅏ", "ㅐ", "ㅑ", "ㅒ", "ㅓ", "ㅔ", "ㅕ",
-                        "ㅖ", "ㅗ", "ㅘ", "ㅙ", "ㅚ", "ㅛ", "ㅜ",
-                        "ㅝ", "ㅞ", "ㅟ", "ㅠ", "ㅡ", "ㅢ", "ㅣ"
-                    )
-
-                    val vowelIndex = modernVowels.indexOf(vowelText)
-
-                    if (vowelIndex == -1) {
-                        ""
+                    val index = vowels.indexOf(vowelText)
+                    if (index in 0..20) {
+                        (0x1161 + index).toChar().toString()
                     } else {
-                        String(
-                            Character.toChars(0x1161 + vowelIndex)
-                        )
+                        ""
                     }
                 }
             }
 
-            val jongseong = if (tail == 0) {
-                ""
+            val jongseong = if (tail > 0) {
+                finals.getOrNull(tail - 1)?.let { final ->
+                    val index = finals.indexOf(final)
+                    if (index in 0..26) {
+                        (0x11A8 + index).toChar().toString()
+                    } else {
+                        ""
+                    }
+                } ?: ""
             } else {
-                val trailingJamo = listOf(
-                    "", "\u11A8", "\u11A9", "\u11AA", "\u11AB",
-                    "\u11AC", "\u11AD", "\u11AE", "\u11AF", "\u11B0",
-                    "\u11B1", "\u11B2", "\u11B3", "\u11B4", "\u11B5",
-                    "\u11B6", "\u11B7", "\u11B8", "\u11B9", "\u11BA",
-                    "\u11BB", "\u11BC", "\u11BD", "\u11BE", "\u11BF",
-                    "\u11C0", "\u11C1", "\u11C2"
-                )
-
-                trailingJamo.getOrElse(tail) { "" }
+                ""
             }
 
-            connection.setComposingText(archaicLead + jungseong + jongseong, 1)
+            connection.setComposingText(
+                currentArchaicLead + jungseong + jongseong,
+                1
+            )
             return
         }
 
