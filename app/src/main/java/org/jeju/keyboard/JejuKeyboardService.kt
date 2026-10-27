@@ -288,6 +288,12 @@ class JejuKeyboardService : InputMethodService() {
                                     when {
                                         vowels.contains(selected) -> inputVowel(selected)
 
+                                        archaicInitialJamo.containsKey(selected) -> {
+                                            finishComposition()
+                                            archaicLead = archaicInitialJamo[selected]
+                                            updateComposition()
+                                        }
+
                                         leading.contains(selected) -> inputConsonant(selected)
 
                                         else -> {
