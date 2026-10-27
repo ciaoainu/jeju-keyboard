@@ -34,6 +34,17 @@ class JejuKeyboardService : InputMethodService() {
     private var lead = -1
     private var vowel = -1
     private var tail = 0
+    
+    private var archaicLead: String? = null
+
+    private val archaicInitialJamo = mapOf(
+        "ㅸ" to "\u112B",
+        "ㅿ" to "\u1140",
+        "ㅱ" to "\u111D",
+        "ㆁ" to "\u114C",
+        "ㆆ" to "\u1159",
+        "ㆄ" to "\u1157"
+    )
 
     private val leading = listOf(
         "ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ",
@@ -76,6 +87,11 @@ class JejuKeyboardService : InputMethodService() {
         "ㆁ" to "\u11C2",
         "ㆆ" to "\uD7F4",
         "ㆄ" to "\uD7F5"
+    )
+
+    
+    private val obsoleteConsonants = listOf(
+        "ㅸ", "ㅿ", "ㅱ", "ㆁ", "ㆆ", "ㆄ"
     )
 
     override fun onCreateInputView(): View = buildKeyboard()
@@ -568,11 +584,12 @@ class JejuKeyboardService : InputMethodService() {
 
                 when {
                     vowels.contains(shifted) -> inputVowel(shifted)
-                    leading.contains(shifted) -> inputConsonant(shifted)
-                    shifted == "ㆍ" || shifted == "ᆢ" -> {
+                    archaicInitialJamo.containsKey(shifted) -> {
                         finishComposition()
-                        connection.commitText(shifted, 1)
+                        archaicLead = archaicInitialJamo[shifted]
+                        updateComposition()
                     }
+                    leading.contains(shifted) -> inputConsonant(shifted)
                     else -> {
                         finishComposition()
                         connection.commitText(shifted, 1)
