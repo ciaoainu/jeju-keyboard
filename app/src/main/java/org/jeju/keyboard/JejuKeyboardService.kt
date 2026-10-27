@@ -254,8 +254,19 @@ class JejuKeyboardService : InputMethodService() {
                                         ).toInt().coerceIn(popupChoices.indices)
                                     }
 
-                                    finishComposition()
-                                    currentInputConnection?.commitText(popupChoices[index], 1)
+                                    
+                                    val selected = popupChoices[index]
+
+                                    when {
+                                        vowels.contains(selected) -> inputVowel(selected)
+
+                                        leading.contains(selected) -> inputConsonant(selected)
+
+                                        else -> {
+                                            finishComposition()
+                                            currentInputConnection?.commitText(selected, 1)
+                                        }
+                                    }
 
                                     activePopup.dismiss()
                                     popup = null
@@ -359,14 +370,26 @@ class JejuKeyboardService : InputMethodService() {
             elevation = dp(8).toFloat()
         }
 
+        
         val location = IntArray(2)
-        anchor.getLocationOnScreen(location)
+        anchor.getLocationInWindow(location)
+
+        val popupWidth = dp(48) * choices.size + dp(16)
+        val popupHeight = dp(60)
+
+        val x = (
+            location[0] + anchor.width / 2 - popupWidth / 2
+        ).coerceAtLeast(0)
+
+        val y = (
+            location[1] - popupHeight - dp(4)
+        ).coerceAtLeast(0)
 
         popup.showAtLocation(
             anchor,
             Gravity.TOP or Gravity.START,
-            location[0],
-            (location[1] - dp(62)).coerceAtLeast(0)
+            x,
+            y
         )
 
         // Return the popup buttons to the touch handler for highlighting.
