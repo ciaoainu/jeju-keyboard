@@ -390,9 +390,7 @@ class JejuKeyboardService : InputMethodService() {
         val extraUpwardOffset = 0
 
         val y = if (anchor.tag == "topRow") {
-            (
-                location[1] - popupHeight - anchor.height - dp(8)
-            ).coerceAtLeast(0)
+            location[1] - popupHeight - dp(4)
         } else {
             (
                 location[1] - popupHeight - dp(4)
