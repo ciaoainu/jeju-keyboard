@@ -464,9 +464,6 @@ class JejuKeyboardService : InputMethodService() {
 
             "제줏말" -> {
                 finishComposition()
-                lead = -1
-                vowel = -1
-                tail = 0
                 connection.commitText(" ", 1)
             }
 
@@ -732,22 +729,57 @@ class JejuKeyboardService : InputMethodService() {
     }
 
     
+    
     private fun backspace() {
         val connection = currentInputConnection ?: return
 
+        // If the cursor is after committed text, inspect the actual text.
+        val before = connection.getTextBeforeCursor(32, 0)?.toString() ?: ""
+
+        // Remove a complete archaic-vowel block, including its initial
+        // consonant and any trailing consonant Jamo.
+        val archaicVowels = listOf("\u119E", "\u11A3")
+
+        for (vowelText in archaicVowels) {
+            val vowelPosition = before.lastIndexOf(vowelText)
+
+            if (vowelPosition >= 0 && vowelPosition == before.lastIndexOf(vowelText)) {
+                // Find the start of the block: the nearest leading Jamo
+                // before the archaic vowel.
+                val start = (vowelPosition - 1 downTo 0).firstOrNull {
+                    before[it] in '\u1100'..'\u1112'
+                }
+
+                if (start != null && start < vowelPosition) {
+                    val trailing = before.substring(vowelPosition + vowelText.length)
+                    val blockLength = if (
+                        trailing.isNotEmpty() &&
+                        trailing.first() in '\u11A8'..'\u11C2'
+                    ) {
+                        trailing.firstIndex + 1
+                    } else {
+                        vowelPosition + vowelText.length - start
+                    }
+
+                    if (blockLength > 0) {
+                        connection.deleteSurroundingText(
+                            before.length - start,
+                            0
+                        )
+                        clearComposition()
+                        return
+                    }
+                }
+            }
+        }
+
+        // Fall back to ordinary in-progress composition deletion.
         if (tail != 0) {
             tail = 0
             updateComposition()
         } else if (vowel != -1) {
             vowel = -1
-
-            if (lead != -1) {
-                // Keep the consonant as active composing text.
-                updateComposition()
-            } else {
-                clearComposition()
-                connection.deleteSurroundingText(1, 0)
-            }
+            updateComposition()
         } else if (lead != -1) {
             clearComposition()
             connection.setComposingText("", 1)
