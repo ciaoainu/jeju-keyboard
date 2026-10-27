@@ -464,6 +464,9 @@ class JejuKeyboardService : InputMethodService() {
 
             "제줏말" -> {
                 finishComposition()
+                lead = -1
+                vowel = -1
+                tail = 0
                 connection.commitText(" ", 1)
             }
 
