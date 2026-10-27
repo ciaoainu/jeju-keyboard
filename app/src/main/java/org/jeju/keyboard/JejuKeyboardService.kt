@@ -67,6 +67,15 @@ class JejuKeyboardService : InputMethodService() {
         "ㄹㅎ" to "ㅀ", "ㅂㅅ" to "ㅄ"
     )
 
+    private val archaicFinalJamo = mapOf(
+        "ㅸ" to "\uD7F0",
+        "ㅿ" to "\uD7D0",
+        "ㅱ" to "\uD7F3",
+        "ㆁ" to "\u11C2",
+        "ㆆ" to "\uD7F4",
+        "ㆄ" to "\uD7F5"
+    )
+
     override fun onCreateInputView(): View = buildKeyboard()
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
