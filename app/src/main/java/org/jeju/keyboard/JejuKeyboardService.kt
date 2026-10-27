@@ -752,6 +752,7 @@ class JejuKeyboardService : InputMethodService() {
 
     
     
+    
     private fun backspace() {
         val connection = currentInputConnection ?: return
 
@@ -762,37 +763,28 @@ class JejuKeyboardService : InputMethodService() {
         val trailingJamo = '\u11A8'..'\u11C2'
 
         if (lastCommittedArchaicBlock) {
-            // First Backspace after Space removes only the space.
+            // After Space, the first Backspace removes only the space.
             if (before.endsWith(" ")) {
                 connection.deleteSurroundingText(1, 0)
                 return
             }
 
-            // Find the most recent archaic vowel immediately before the cursor.
+            // Look for an archaic block ending immediately before the cursor.
             val vowelPosition = before.indexOfLast { it in archaicVowels }
 
             if (vowelPosition >= 1) {
                 val initialPosition = vowelPosition - 1
 
                 if (before[initialPosition] in leadingJamo) {
-                    // Delete the initial consonant and archaic vowel.
-                    var startPosition = initialPosition
-                    var endPosition = vowelPosition + 1
+                    val hasFinal =
+                        vowelPosition + 1 < before.length &&
+                        before[vowelPosition + 1] in trailingJamo
 
-                    // Include a trailing consonant if present.
-                    if (
-                        endPosition < before.length &&
-                        before[endPosition] in trailingJamo
-                    ) {
-                        endPosition++
-                    }
+                    val blockLength = if (hasFinal) 3 else 2
+                    val blockEnd = initialPosition + blockLength
 
-                    // Only delete the block if it ends at the cursor.
-                    if (endPosition == before.length) {
-                        connection.deleteSurroundingText(
-                            before.length - startPosition,
-                            0
-                        )
+                    if (blockEnd == before.length) {
+                        connection.deleteSurroundingText(blockLength, 0)
                         lastCommittedArchaicBlock = false
                         clearComposition()
                         return
@@ -800,8 +792,7 @@ class JejuKeyboardService : InputMethodService() {
                 }
             }
 
-            // Don't leave the special deletion flag active if the block
-            // is no longer immediately before the cursor.
+            // If the cursor isn't at the block, use normal Backspace.
             lastCommittedArchaicBlock = false
         }
 
