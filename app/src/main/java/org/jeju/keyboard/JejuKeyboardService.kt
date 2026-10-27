@@ -751,57 +751,61 @@ class JejuKeyboardService : InputMethodService() {
     }
 
     
+    
     private fun backspace() {
         val connection = currentInputConnection ?: return
 
-        val before = connection.getTextBeforeCursor(8, 0)?.toString() ?: ""
+        val before = connection.getTextBeforeCursor(16, 0)?.toString() ?: ""
 
-        val archaicVowels = setOf('\u119E', '\u11A3')
+        val archaicVowels = setOf('\u119E', '\u11A2')
         val leadingJamo = '\u1100'..'\u1112'
         val trailingJamo = '\u11A8'..'\u11C2'
 
-        // Special deletion is allowed only after Space committed the block.
         if (lastCommittedArchaicBlock) {
-            // If the cursor is after the space, delete only that space first.
+            // First Backspace after Space removes only the space.
             if (before.endsWith(" ")) {
                 connection.deleteSurroundingText(1, 0)
                 return
             }
 
-            // Delete a committed block with a final consonant.
-            if (before.length >= 3) {
-                val end = before.length
-                if (
-                    before[end - 1] in trailingJamo &&
-                    before[end - 2] in archaicVowels &&
-                    before[end - 3] in leadingJamo
-                ) {
-                    connection.deleteSurroundingText(3, 0)
-                    lastCommittedArchaicBlock = false
-                    clearComposition()
-                    return
+            // Find the most recent archaic vowel immediately before the cursor.
+            val vowelPosition = before.indexOfLast { it in archaicVowels }
+
+            if (vowelPosition >= 1) {
+                val initialPosition = vowelPosition - 1
+
+                if (before[initialPosition] in leadingJamo) {
+                    // Delete the initial consonant and archaic vowel.
+                    var startPosition = initialPosition
+                    var endPosition = vowelPosition + 1
+
+                    // Include a trailing consonant if present.
+                    if (
+                        endPosition < before.length &&
+                        before[endPosition] in trailingJamo
+                    ) {
+                        endPosition++
+                    }
+
+                    // Only delete the block if it ends at the cursor.
+                    if (endPosition == before.length) {
+                        connection.deleteSurroundingText(
+                            before.length - startPosition,
+                            0
+                        )
+                        lastCommittedArchaicBlock = false
+                        clearComposition()
+                        return
+                    }
                 }
             }
 
-            // Delete a committed block without a final consonant.
-            if (before.length >= 2) {
-                val end = before.length
-                if (
-                    before[end - 1] in archaicVowels &&
-                    before[end - 2] in leadingJamo
-                ) {
-                    connection.deleteSurroundingText(2, 0)
-                    lastCommittedArchaicBlock = false
-                    clearComposition()
-                    return
-                }
-            }
-
-            // The expected block isn't immediately before the cursor.
+            // Don't leave the special deletion flag active if the block
+            // is no longer immediately before the cursor.
             lastCommittedArchaicBlock = false
         }
 
-        // Ordinary in-progress composition: remove the final, vowel, or initial.
+        // Normal in-progress composition behavior.
         if (tail != 0) {
             tail = 0
             updateComposition()
