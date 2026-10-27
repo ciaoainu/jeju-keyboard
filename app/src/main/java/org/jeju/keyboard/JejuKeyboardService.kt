@@ -376,7 +376,7 @@ class JejuKeyboardService : InputMethodService() {
 
         
         val location = IntArray(2)
-        anchor.getLocationOnScreen(location)
+        anchor.getLocationInWindow(location)
 
         val optionWidth = dp(48)
         val popupWidth = optionWidth * choices.size + dp(16)
@@ -387,12 +387,7 @@ class JejuKeyboardService : InputMethodService() {
             location[0] + anchor.width / 2 - optionWidth / 2
         ).coerceAtLeast(0)
 
-        // Move only the highest row's popup farther upward.
-        val extraUpwardOffset = if (anchor.tag == "topRow") {
-            anchor.height + dp(8)
-        } else {
-            0
-        }
+        val extraUpwardOffset = 0
 
         val y = (
             location[1] - popupHeight - dp(4) - extraUpwardOffset
