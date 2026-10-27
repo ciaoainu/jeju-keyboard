@@ -637,17 +637,72 @@ class JejuKeyboardService : InputMethodService() {
         connection.commitText(key, 1)
     }
 
+    
     private fun updateComposition() {
         val connection = currentInputConnection ?: return
 
         if (lead == -1) return
 
-        val text = if (vowel == -1) {
-            leading[lead]
+        // Modern Hangul syllables use the standard Unicode syllable formula.
+        // Arae-a and double arae-a must instead be represented as Jamo.
+        val vowelText = if (vowel == -1) {
+            null
         } else {
-            val codePoint = 0xAC00 +
-                (lead * 21 + vowel) * 28 + tail
-            String(Character.toChars(codePoint))
+            vowels[vowel]
+        }
+
+        val text = if (
+            vowelText == null ||
+            vowelText == "ㆍ" ||
+            vowelText == "ᆢ"
+        ) {
+            if (vowelText == null) {
+                leading[lead]
+            } else {
+                val choseong = listOf(
+                    "ㄱ" to "\u1100",
+                    "ㄲ" to "\u1101",
+                    "ㄴ" to "\u1102",
+                    "ㄷ" to "\u1103",
+                    "ㄸ" to "\u1104",
+                    "ㄹ" to "\u1105",
+                    "ㅁ" to "\u1106",
+                    "ㅂ" to "\u1107",
+                    "ㅃ" to "\u1108",
+                    "ㅅ" to "\u1109",
+                    "ㅆ" to "\u110A",
+                    "ㅇ" to "\u110B",
+                    "ㅈ" to "\u110C",
+                    "ㅉ" to "\u110D",
+                    "ㅊ" to "\u110E",
+                    "ㅋ" to "\u110F",
+                    "ㅌ" to "\u1110",
+                    "ㅍ" to "\u1111",
+                    "ㅎ" to "\u1112"
+                ).toMap()[leading[lead]] ?: leading[lead]
+
+                val jungseong = when (vowelText) {
+                    "ㆍ" -> "\u119E"
+                    "ᆢ" -> "\u11A2"
+                    else -> ""
+                }
+
+                choseong + jungseong
+            }
+        } else {
+            val modernVowelIndex = listOf(
+                "ㅏ", "ㅐ", "ㅑ", "ㅒ", "ㅓ", "ㅔ", "ㅕ",
+                "ㅖ", "ㅗ", "ㅘ", "ㅙ", "ㅚ", "ㅛ", "ㅜ",
+                "ㅝ", "ㅞ", "ㅟ", "ㅠ", "ㅡ", "ㅢ", "ㅣ"
+            ).indexOf(vowelText)
+
+            if (modernVowelIndex == -1) {
+                leading[lead]
+            } else {
+                val codePoint = 0xAC00 +
+                    (lead * 21 + modernVowelIndex) * 28 + tail
+                String(Character.toChars(codePoint))
+            }
         }
 
         connection.setComposingText(text, 1)
