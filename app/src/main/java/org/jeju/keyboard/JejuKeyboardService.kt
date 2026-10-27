@@ -728,6 +728,7 @@ class JejuKeyboardService : InputMethodService() {
         tail = 0
     }
 
+    
     private fun backspace() {
         val connection = currentInputConnection ?: return
 
@@ -736,7 +737,14 @@ class JejuKeyboardService : InputMethodService() {
             updateComposition()
         } else if (vowel != -1) {
             vowel = -1
-            updateComposition()
+
+            if (lead != -1) {
+                // Keep the consonant as active composing text.
+                updateComposition()
+            } else {
+                clearComposition()
+                connection.deleteSurroundingText(1, 0)
+            }
         } else if (lead != -1) {
             clearComposition()
             connection.setComposingText("", 1)
