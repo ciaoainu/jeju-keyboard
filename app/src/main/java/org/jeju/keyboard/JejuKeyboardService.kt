@@ -699,11 +699,26 @@ class JejuKeyboardService : InputMethodService() {
 
                 val jungseong = when (vowelText) {
                     "ㆍ" -> "\u119E"
-                    "ᆢ" -> "\u11A3"
+                    "ᆢ" -> "\u11A2"
                     else -> ""
                 }
 
-                choseong + jungseong
+                val jongseong = if (tail == 0) {
+                    ""
+                } else {
+                    val trailingJamo = listOf(
+                        "", "\u11A8", "\u11A9", "\u11AA", "\u11AB",
+                        "\u11AC", "\u11AD", "\u11AE", "\u11AF", "\u11B0",
+                        "\u11B1", "\u11B2", "\u11B3", "\u11B4", "\u11B5",
+                        "\u11B6", "\u11B7", "\u11B8", "\u11B9", "\u11BA",
+                        "\u11BB", "\u11BC", "\u11BD", "\u11BE", "\u11BF",
+                        "\u11C0", "\u11C1", "\u11C2"
+                    )
+
+                    trailingJamo.getOrElse(tail) { "" }
+                }
+
+                choseong + jungseong + jongseong
             }
         } else {
             val modernVowelIndex = listOf(
