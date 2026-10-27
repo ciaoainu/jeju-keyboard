@@ -165,6 +165,12 @@ class JejuKeyboardService : InputMethodService() {
                     val popupChoices = when (label) {
                         "ㅅ" -> if (shiftActive) listOf("ㅿ") else listOf("ㅆ", "ㅿ")
                         "ㅂ" -> if (shiftActive) listOf("ㅸ") else listOf("ㅃ", "ㅸ")
+                        "ㅈ" -> listOf("ㅉ")
+                        "ㄷ" -> listOf("ㄸ")
+                        "ㄱ" -> listOf("ㄲ")
+                        "ㅐ" -> listOf("ㅒ")
+                        "ㅔ" -> listOf("ㅖ")
+                        "ㆍ" -> listOf("ᆢ")
                         "ㅇ" -> listOf("ㆁ")
                         "ㅎ" -> listOf("ㆆ")
                         "ㅍ" -> listOf("ㆄ")
@@ -194,7 +200,39 @@ class JejuKeyboardService : InputMethodService() {
                                 true
                             }
 
+                            
                             MotionEvent.ACTION_MOVE -> {
+                                val activePopup = popup
+
+                                if (longPressTriggered && activePopup != null) {
+                                    val popupContent = activePopup.contentView
+                                    val location = IntArray(2)
+                                    popupContent.getLocationOnScreen(location)
+
+                                    val popupButtons =
+                                        popupContent.tag as? List<*>
+
+                                    if (popupButtons != null && popupChoices.isNotEmpty()) {
+                                        val buttonWidth = dp(48)
+                                        val index = (
+                                            (event.rawX - location[0] - dp(4)) / buttonWidth
+                                        ).toInt().coerceIn(popupChoices.indices)
+
+                                        popupButtons.forEachIndexed { i, item ->
+                                            val button = item as? Button ?: return@forEachIndexed
+                                            val highlighted = i == index
+
+                                            button.background = GradientDrawable().apply {
+                                                setColor(
+                                                    if (highlighted) Color.rgb(150, 205, 240)
+                                                    else specialColor
+                                                )
+                                                cornerRadius = dp(8).toFloat()
+                                            }
+                                        }
+                                    }
+                                }
+
                                 true
                             }
 
@@ -207,29 +245,17 @@ class JejuKeyboardService : InputMethodService() {
                                     val location = IntArray(2)
                                     popupContent.getLocationOnScreen(location)
 
-                                    val fingerX = event.rawX
-                                    val fingerY = event.rawY
-                                    val popupWidth = popupContent.width
-                                    val popupHeight = popupContent.height
-
-                                    if (
-                                        popupWidth > 0 &&
-                                        fingerX >= location[0] &&
-                                        fingerX < location[0] + popupWidth &&
-                                        fingerY >= location[1] &&
-                                        fingerY < location[1] + popupHeight
-                                    ) {
-                                        val index = (
-                                            (fingerX - location[0]) /
-                                                (popupWidth.toFloat() / popupChoices.size)
+                                    val index = if (popupChoices.size == 1) {
+                                        0
+                                    } else {
+                                        val buttonWidth = dp(48)
+                                        (
+                                            (event.rawX - location[0] - dp(4)) / buttonWidth
                                         ).toInt().coerceIn(popupChoices.indices)
-
-                                        finishComposition()
-                                        currentInputConnection?.commitText(
-                                            popupChoices[index],
-                                            1
-                                        )
                                     }
+
+                                    finishComposition()
+                                    currentInputConnection?.commitText(popupChoices[index], 1)
 
                                     activePopup.dismiss()
                                     popup = null
@@ -279,6 +305,7 @@ class JejuKeyboardService : InputMethodService() {
 
     
     
+    
     private fun showCharacterPopup(
         anchor: View,
         choices: List<String>
@@ -293,6 +320,8 @@ class JejuKeyboardService : InputMethodService() {
                 setStroke(dp(1), specialColor)
             }
         }
+
+        val popupButtons = mutableListOf<Button>()
 
         choices.forEach { character ->
             val button = Button(this).apply {
@@ -311,6 +340,7 @@ class JejuKeyboardService : InputMethodService() {
                 }
             }
 
+            popupButtons.add(button)
             content.addView(
                 button,
                 LinearLayout.LayoutParams(dp(48), dp(52))
@@ -329,12 +359,18 @@ class JejuKeyboardService : InputMethodService() {
             elevation = dp(8).toFloat()
         }
 
-        // Position the popup above the key.
-        popup.showAsDropDown(
+        val location = IntArray(2)
+        anchor.getLocationOnScreen(location)
+
+        popup.showAtLocation(
             anchor,
-            0,
-            -anchor.height - dp(62)
+            Gravity.TOP or Gravity.START,
+            location[0],
+            (location[1] - dp(62)).coerceAtLeast(0)
         )
+
+        // Return the popup buttons to the touch handler for highlighting.
+        content.tag = popupButtons
 
         return popup
     }
