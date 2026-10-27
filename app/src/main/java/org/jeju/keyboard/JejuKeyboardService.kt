@@ -728,52 +728,47 @@ class JejuKeyboardService : InputMethodService() {
         tail = 0
     }
 
-    
-    
     private fun backspace() {
         val connection = currentInputConnection ?: return
 
-        // If the cursor is after committed text, inspect the actual text.
-        val before = connection.getTextBeforeCursor(32, 0)?.toString() ?: ""
+        // Inspect only the text immediately before the cursor.
+        val before = connection.getTextBeforeCursor(8, 0)?.toString() ?: ""
 
-        // Remove a complete archaic-vowel block, including its initial
-        // consonant and any trailing consonant Jamo.
-        val archaicVowels = listOf("\u119E", "\u11A3")
+        val archaicVowels = setOf('\u119E', '\u11A3')
+        val leadingJamo = '\u1100'..'\u1112'
+        val trailingJamo = '\u11A8'..'\u11C2'
 
-        for (vowelText in archaicVowels) {
-            val vowelPosition = before.lastIndexOf(vowelText)
+        // A committed archaic block may end in a trailing consonant:
+        // leading Jamo + archaic vowel + trailing Jamo.
+        if (before.length >= 3) {
+            val end = before.length
 
-            if (vowelPosition >= 0 && vowelPosition == before.lastIndexOf(vowelText)) {
-                // Find the start of the block: the nearest leading Jamo
-                // before the archaic vowel.
-                val start = (vowelPosition - 1 downTo 0).firstOrNull {
-                    before[it] in '\u1100'..'\u1112'
-                }
-
-                if (start != null && start < vowelPosition) {
-                    val trailing = before.substring(vowelPosition + vowelText.length)
-                    val blockLength = if (
-                        trailing.isNotEmpty() &&
-                        trailing.first() in '\u11A8'..'\u11C2'
-                    ) {
-                        1
-                    } else {
-                        vowelPosition + vowelText.length - start
-                    }
-
-                    if (blockLength > 0) {
-                        connection.deleteSurroundingText(
-                            before.length - start,
-                            0
-                        )
-                        clearComposition()
-                        return
-                    }
-                }
+            if (
+                before[end - 1] in trailingJamo &&
+                before[end - 2] in archaicVowels &&
+                before[end - 3] in leadingJamo
+            ) {
+                connection.deleteSurroundingText(3, 0)
+                clearComposition()
+                return
             }
         }
 
-        // Fall back to ordinary in-progress composition deletion.
+        // Or it may contain just a leading consonant and archaic vowel.
+        if (before.length >= 2) {
+            val end = before.length
+
+            if (
+                before[end - 1] in archaicVowels &&
+                before[end - 2] in leadingJamo
+            ) {
+                connection.deleteSurroundingText(2, 0)
+                clearComposition()
+                return
+            }
+        }
+
+        // Preserve the ordinary in-progress composition behavior.
         if (tail != 0) {
             tail = 0
             updateComposition()
