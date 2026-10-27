@@ -374,16 +374,22 @@ class JejuKeyboardService : InputMethodService() {
         val location = IntArray(2)
         anchor.getLocationInWindow(location)
 
-        val popupWidth = dp(48) * choices.size + dp(16)
+        val optionWidth = dp(48)
+        val popupWidth = optionWidth * choices.size + dp(16)
         val popupHeight = dp(60)
 
+        // Align the LEFT edge of the first option with the key's center.
         val x = (
-            location[0] + anchor.width / 2 - popupWidth / 2
+            location[0] + anchor.width / 2 - optionWidth / 2
         ).coerceAtLeast(0)
 
+        // Place the popup above the key.
         val y = (
             location[1] - popupHeight - dp(4)
         ).coerceAtLeast(0)
+
+        popup.width = popupWidth
+        popup.height = popupHeight
 
         popup.showAtLocation(
             anchor,
