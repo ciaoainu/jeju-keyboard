@@ -473,7 +473,28 @@ class JejuKeyboardService : InputMethodService() {
                 lastCommittedArchaicBlock = isArchaic
 
                 if (isArchaic && lead != -1) {
-                    val initial = '\u1100'.code + lead
+                    val initial = when (leading[lead]) {
+                        "ㄱ" -> "\u1100"
+                        "ㄲ" -> "\u1101"
+                        "ㄴ" -> "\u1102"
+                        "ㄷ" -> "\u1103"
+                        "ㄸ" -> "\u1104"
+                        "ㄹ" -> "\u1105"
+                        "ㅁ" -> "\u1106"
+                        "ㅂ" -> "\u1107"
+                        "ㅃ" -> "\u1108"
+                        "ㅅ" -> "\u1109"
+                        "ㅆ" -> "\u110A"
+                        "ㅇ" -> "\u110B"
+                        "ㅈ" -> "\u110C"
+                        "ㅉ" -> "\u110D"
+                        "ㅊ" -> "\u110E"
+                        "ㅋ" -> "\u110F"
+                        "ㅌ" -> "\u1110"
+                        "ㅍ" -> "\u1111"
+                        "ㅎ" -> "\u1112"
+                        else -> ""
+                    }
                     val archaicVowel = if (vowels[vowel] == "ㆍ") {
                         '\u119E'
                     } else {
@@ -487,7 +508,7 @@ class JejuKeyboardService : InputMethodService() {
                     }
 
                     archaicBlockText = buildString {
-                        append(initial.toChar())
+                        append(initial)
                         append(archaicVowel)
                         if (finalJamo != null) append(finalJamo)
                     }
