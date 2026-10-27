@@ -796,47 +796,68 @@ class JejuKeyboardService : InputMethodService() {
         tail = 0
     }
 
+    
     private fun backspace() {
         val connection = currentInputConnection ?: return
 
-        val before = connection.getTextBeforeCursor(32, 0)?.toString() ?: ""
-
-        val archaicText = archaicBlockText
-
-        if (lastCommittedArchaicBlock && archaicText.isNotEmpty()) {
-            // Remove the space after the archaic block first,
-            // but only when that space is immediately after the block.
-            if (
-                before.endsWith(" ") &&
-                before.dropLast(1).endsWith(archaicText)
-            ) {
-                connection.deleteSurroundingText(1, 0)
-                return
-            }
-
-            // When Backspace reaches the archaic block, remove it all at once.
-            if (before.endsWith(archaicText)) {
-                connection.deleteSurroundingText(archaicText.length, 0)
-                lastCommittedArchaicBlock = false
-                archaicBlockText = ""
-                clearComposition()
-                return
-            }
-        }
-
-        // Normal in-progress composition behavior.
+        // Keep normal editing behavior for a syllable still being composed.
         if (tail != 0) {
             tail = 0
             updateComposition()
-        } else if (vowel != -1) {
+            return
+        }
+
+        if (vowel != -1) {
             vowel = -1
             updateComposition()
-        } else if (lead != -1) {
+            return
+        }
+
+        if (lead != -1) {
             clearComposition()
             connection.setComposingText("", 1)
-        } else {
-            connection.deleteSurroundingText(1, 0)
+            return
         }
+
+        // Check the actual committed text before the cursor.
+        val before = connection.getTextBeforeCursor(32, 0)?.toString() ?: ""
+
+        if (before.isEmpty()) return
+
+        // Unicode Jamo used by archaic blocks.
+        val archaicVowels = setOf('\u119E', '\u11A2')
+        val leadingJamo = '\u1100'..'\u1112'
+        val trailingJamo = '\u11A8'..'\u11C2'
+
+        // Ignore a trailing space for this check; remove it normally first.
+        val text = before
+
+        // A block must end with an archaic vowel, optionally followed
+        // by one trailing Jamo. The initial Jamo must precede the vowel.
+        var end = text.length
+        var vowelPosition = end - 1
+
+        if (text[vowelPosition] in trailingJamo) {
+            vowelPosition--
+        }
+
+        if (
+            vowelPosition >= 1 &&
+            text[vowelPosition] in archaicVowels &&
+            text[vowelPosition - 1] in leadingJamo
+        ) {
+            val start = vowelPosition - 1
+            val blockLength = end - start
+
+            connection.deleteSurroundingText(blockLength, 0)
+
+            lastCommittedArchaicBlock = false
+            archaicBlockText = ""
+            return
+        }
+
+        // Not an archaic block: delete one character as usual.
+        connection.deleteSurroundingText(1, 0)
     }
 
     private fun dp(value: Int): Int =
