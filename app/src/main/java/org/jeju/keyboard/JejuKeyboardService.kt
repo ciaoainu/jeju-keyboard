@@ -295,6 +295,10 @@ class JejuKeyboardService : InputMethodService() {
 
                 }
 
+                if (rowIndex == 0) {
+                    key.tag = "topRow"
+                }
+
                 val params = LinearLayout.LayoutParams(
                     0, dp(if (rowIndex == 3) 62 else 58), weight
                 )
@@ -383,9 +387,14 @@ class JejuKeyboardService : InputMethodService() {
             location[0] + anchor.width / 2 - optionWidth / 2
         ).coerceAtLeast(0)
 
-        // Place the popup above the key.
+        val extraUpwardOffset = if (anchor.tag == "topRow") {
+            anchor.height + dp(8)
+        } else {
+            0
+        }
+        
         val y = (
-            location[1] - popupHeight - dp(4)
+            location[1] - popupHeight - dp(4) - extraUpwardOffset
         ).coerceAtLeast(0)
 
         popup.width = popupWidth
