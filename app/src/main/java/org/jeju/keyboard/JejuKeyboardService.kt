@@ -376,23 +376,24 @@ class JejuKeyboardService : InputMethodService() {
 
         
         val location = IntArray(2)
-        anchor.getLocationInWindow(location)
+        anchor.getLocationOnScreen(location)
 
         val optionWidth = dp(48)
         val popupWidth = optionWidth * choices.size + dp(16)
         val popupHeight = dp(60)
 
-        // Align the LEFT edge of the first option with the key's center.
+        // Keep the existing horizontal alignment.
         val x = (
             location[0] + anchor.width / 2 - optionWidth / 2
         ).coerceAtLeast(0)
 
+        // Move only the highest row's popup farther upward.
         val extraUpwardOffset = if (anchor.tag == "topRow") {
             anchor.height + dp(8)
         } else {
             0
         }
-        
+
         val y = (
             location[1] - popupHeight - dp(4) - extraUpwardOffset
         ).coerceAtLeast(0)
