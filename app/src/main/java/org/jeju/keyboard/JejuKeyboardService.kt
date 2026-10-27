@@ -23,6 +23,7 @@ class JejuKeyboardService : InputMethodService() {
     private var shiftActive = false
     private var capsLock = false
     private var lastShiftTap = 0L
+    private var lastCommittedArchaicBlock = false
 
     private val backgroundColor = Color.rgb(225, 239, 250)
     private val keyColor = Color.WHITE
@@ -463,6 +464,10 @@ class JejuKeyboardService : InputMethodService() {
             }
 
             "제줏말" -> {
+                lastCommittedArchaicBlock =
+                    vowel != -1 &&
+                    (vowels[vowel] == "ㆍ" || vowels[vowel] == "ᆢ")
+
                 finishComposition()
                 connection.commitText(" ", 1)
             }
@@ -497,6 +502,8 @@ class JejuKeyboardService : InputMethodService() {
             }
 
             else -> {
+                lastCommittedArchaicBlock = false
+                
                 val shifted = if (shiftActive) {
                     when (key) {
                         "ㅂ" -> "ㅃ"
@@ -692,7 +699,7 @@ class JejuKeyboardService : InputMethodService() {
 
                 val jungseong = when (vowelText) {
                     "ㆍ" -> "\u119E"
-                    "ᆢ" -> "\u11A2"
+                    "ᆢ" -> "\u11A3"
                     else -> ""
                 }
 
@@ -728,47 +735,58 @@ class JejuKeyboardService : InputMethodService() {
         tail = 0
     }
 
+    
     private fun backspace() {
         val connection = currentInputConnection ?: return
 
-        // Inspect only the text immediately before the cursor.
         val before = connection.getTextBeforeCursor(8, 0)?.toString() ?: ""
 
         val archaicVowels = setOf('\u119E', '\u11A3')
         val leadingJamo = '\u1100'..'\u1112'
         val trailingJamo = '\u11A8'..'\u11C2'
 
-        // A committed archaic block may end in a trailing consonant:
-        // leading Jamo + archaic vowel + trailing Jamo.
-        if (before.length >= 3) {
-            val end = before.length
-
-            if (
-                before[end - 1] in trailingJamo &&
-                before[end - 2] in archaicVowels &&
-                before[end - 3] in leadingJamo
-            ) {
-                connection.deleteSurroundingText(3, 0)
-                clearComposition()
+        // Special deletion is allowed only after Space committed the block.
+        if (lastCommittedArchaicBlock) {
+            // If the cursor is after the space, delete only that space first.
+            if (before.endsWith(" ")) {
+                connection.deleteSurroundingText(1, 0)
                 return
             }
-        }
 
-        // Or it may contain just a leading consonant and archaic vowel.
-        if (before.length >= 2) {
-            val end = before.length
-
-            if (
-                before[end - 1] in archaicVowels &&
-                before[end - 2] in leadingJamo
-            ) {
-                connection.deleteSurroundingText(2, 0)
-                clearComposition()
-                return
+            // Delete a committed block with a final consonant.
+            if (before.length >= 3) {
+                val end = before.length
+                if (
+                    before[end - 1] in trailingJamo &&
+                    before[end - 2] in archaicVowels &&
+                    before[end - 3] in leadingJamo
+                ) {
+                    connection.deleteSurroundingText(3, 0)
+                    lastCommittedArchaicBlock = false
+                    clearComposition()
+                    return
+                }
             }
+
+            // Delete a committed block without a final consonant.
+            if (before.length >= 2) {
+                val end = before.length
+                if (
+                    before[end - 1] in archaicVowels &&
+                    before[end - 2] in leadingJamo
+                ) {
+                    connection.deleteSurroundingText(2, 0)
+                    lastCommittedArchaicBlock = false
+                    clearComposition()
+                    return
+                }
+            }
+
+            // The expected block isn't immediately before the cursor.
+            lastCommittedArchaicBlock = false
         }
 
-        // Preserve the ordinary in-progress composition behavior.
+        // Ordinary in-progress composition: remove the final, vowel, or initial.
         if (tail != 0) {
             tail = 0
             updateComposition()
