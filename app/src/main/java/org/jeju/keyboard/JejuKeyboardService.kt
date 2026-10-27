@@ -717,8 +717,40 @@ class JejuKeyboardService : InputMethodService() {
     }
 
     
+    
     private fun updateComposition() {
         val connection = currentInputConnection ?: return
+
+        // Handle an obsolete initial consonant.
+        if (archaicLead != null) {
+            val vowelText = if (vowel == -1) null else vowels[vowel]
+
+            val jungseong = when (vowelText) {
+                null -> ""
+                "ㆍ" -> "\u119E"
+                "ᆢ" -> "\u11A2"
+                else -> {
+                    val modernVowels = listOf(
+                        "ㅏ", "ㅐ", "ㅑ", "ㅒ", "ㅓ", "ㅔ", "ㅕ",
+                        "ㅖ", "ㅗ", "ㅘ", "ㅙ", "ㅚ", "ㅛ", "ㅜ",
+                        "ㅝ", "ㅞ", "ㅟ", "ㅠ", "ㅡ", "ㅢ", "ㅣ"
+                    )
+
+                    val vowelIndex = modernVowels.indexOf(vowelText)
+
+                    if (vowelIndex == -1) {
+                        ""
+                    } else {
+                        String(
+                            Character.toChars(0x1161 + vowelIndex)
+                        )
+                    }
+                }
+            }
+
+            connection.setComposingText(archaicLead + jungseong, 1)
+            return
+        }
 
         if (lead == -1) return
 
@@ -807,10 +839,12 @@ class JejuKeyboardService : InputMethodService() {
         clearComposition()
     }
 
+    
     private fun clearComposition() {
         lead = -1
         vowel = -1
         tail = 0
+        archaicLead = null
     }
 
     
