@@ -704,16 +704,21 @@ class JejuKeyboardService : InputMethodService() {
     private fun inputVowel(key: String) {
         val connection = currentInputConnection ?: return
         val newVowel = vowels.indexOf(key)
-        // If an obsolete initial consonant is active, combine it with this vowel.
+        // Handle an obsolete initial consonant.
         if (archaicLead != null) {
+            // Complete the obsolete initial with its first vowel.
             if (vowel == -1) {
                 vowel = newVowel
                 updateComposition()
                 return
             }
 
-            // Allow compatible vowel combinations, such as ㅗ + ㅏ = ㅘ.
-            val combined = vowelPairs[vowels[vowel] + key]
+            // Combine compatible vowels when there is no final consonant.
+            val combined = if (tail == 0) {
+                vowelPairs[vowels[vowel] + key]
+            } else {
+                null
+            }
 
             if (combined != null) {
                 vowel = vowels.indexOf(combined)
@@ -721,8 +726,47 @@ class JejuKeyboardService : InputMethodService() {
                 return
             }
 
-            // Finish the current obsolete-letter combination before
-            // inserting a new standalone vowel.
+            // Move the final consonant to the next syllable.
+            if (tail != 0) {
+                val oldFinal = finals[tail]
+
+                val cluster = finalPairs.entries.firstOrNull {
+                    it.value == oldFinal
+                }
+
+                // Keep the first consonant of a compound final behind.
+                tail = if (cluster != null) {
+                    finals.indexOf(cluster.key.first().toString())
+                } else {
+                    0
+                }
+
+                updateComposition()
+                connection.finishComposingText()
+
+                // Move the remaining consonant to the next initial.
+                val nextInitial = if (cluster != null) {
+                    cluster.key.last().toString()
+                } else {
+                    oldFinal
+                }
+
+                archaicLead = null
+                lead = leading.indexOf(nextInitial)
+                vowel = newVowel
+                tail = 0
+
+                // Use ㅇ if the moved consonant isn't a modern initial.
+                if (lead == -1) {
+                    lead = leading.indexOf("ㅇ")
+                    connection.commitText(nextInitial, 1)
+                }
+
+                updateComposition()
+                return
+            }
+
+            // No final consonant: finish and insert the new vowel separately.
             finishComposition()
             connection.commitText(key, 1)
             return
