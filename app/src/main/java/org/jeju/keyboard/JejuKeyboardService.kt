@@ -24,6 +24,7 @@ class JejuKeyboardService : InputMethodService() {
     private var capsLock = false
     private var lastShiftTap = 0L
     private var lastCommittedArchaicBlock = false
+    private var archaicBlockText = ""
 
     private val backgroundColor = Color.rgb(225, 239, 250)
     private val keyColor = Color.WHITE
@@ -463,10 +464,36 @@ class JejuKeyboardService : InputMethodService() {
                 }
             }
 
+            
             "제줏말" -> {
-                lastCommittedArchaicBlock =
+                val isArchaic =
                     vowel != -1 &&
                     (vowels[vowel] == "ㆍ" || vowels[vowel] == "ᆢ")
+
+                lastCommittedArchaicBlock = isArchaic
+
+                if (isArchaic && lead != -1) {
+                    val initial = '\u1100'.code + lead
+                    val archaicVowel = if (vowels[vowel] == "ㆍ") {
+                        '\u119E'
+                    } else {
+                        '\u11A2'
+                    }
+
+                    val finalJamo = if (tail != 0) {
+                        (0x11A7 + tail).toChar()
+                    } else {
+                        null
+                    }
+
+                    archaicBlockText = buildString {
+                        append(initial.toChar())
+                        append(archaicVowel)
+                        if (finalJamo != null) append(finalJamo)
+                    }
+                } else {
+                    archaicBlockText = ""
+                }
 
                 finishComposition()
                 connection.commitText(" ", 1)
@@ -502,8 +529,6 @@ class JejuKeyboardService : InputMethodService() {
             }
 
             else -> {
-                lastCommittedArchaicBlock = false
-                
                 val shifted = if (shiftActive) {
                     when (key) {
                         "ㅂ" -> "ㅃ"
@@ -750,50 +775,32 @@ class JejuKeyboardService : InputMethodService() {
         tail = 0
     }
 
-    
-    
-    
     private fun backspace() {
         val connection = currentInputConnection ?: return
 
-        val before = connection.getTextBeforeCursor(16, 0)?.toString() ?: ""
+        val before = connection.getTextBeforeCursor(32, 0)?.toString() ?: ""
 
-        val archaicVowels = setOf('\u119E', '\u11A2')
-        val leadingJamo = '\u1100'..'\u1112'
-        val trailingJamo = '\u11A8'..'\u11C2'
+        val archaicText = archaicBlockText
 
-        if (lastCommittedArchaicBlock) {
-            // After Space, the first Backspace removes only the space.
-            if (before.endsWith(" ")) {
+        if (lastCommittedArchaicBlock && archaicText.isNotEmpty()) {
+            // Remove the space after the archaic block first,
+            // but only when that space is immediately after the block.
+            if (
+                before.endsWith(" ") &&
+                before.dropLast(1).endsWith(archaicText)
+            ) {
                 connection.deleteSurroundingText(1, 0)
                 return
             }
 
-            // Look for an archaic block ending immediately before the cursor.
-            val vowelPosition = before.indexOfLast { it in archaicVowels }
-
-            if (vowelPosition >= 1) {
-                val initialPosition = vowelPosition - 1
-
-                if (before[initialPosition] in leadingJamo) {
-                    val hasFinal =
-                        vowelPosition + 1 < before.length &&
-                        before[vowelPosition + 1] in trailingJamo
-
-                    val blockLength = if (hasFinal) 3 else 2
-                    val blockEnd = initialPosition + blockLength
-
-                    if (blockEnd == before.length) {
-                        connection.deleteSurroundingText(blockLength, 0)
-                        lastCommittedArchaicBlock = false
-                        clearComposition()
-                        return
-                    }
-                }
+            // When Backspace reaches the archaic block, remove it all at once.
+            if (before.endsWith(archaicText)) {
+                connection.deleteSurroundingText(archaicText.length, 0)
+                lastCommittedArchaicBlock = false
+                archaicBlockText = ""
+                clearComposition()
+                return
             }
-
-            // If the cursor isn't at the block, use normal Backspace.
-            lastCommittedArchaicBlock = false
         }
 
         // Normal in-progress composition behavior.
