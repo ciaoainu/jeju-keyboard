@@ -611,37 +611,92 @@ class JejuKeyboardService : InputMethodService() {
     }
 
 
+    
     private fun inputConsonant(key: String) {
         val connection = currentInputConnection ?: return
         val l = leading.indexOf(key)
+
+        // Handle consonants after an obsolete initial plus vowel.
+        if (archaicLead != null) {
+            if (vowel == -1) {
+                finishComposition()
+                inputConsonant(key)
+                return
+            }
+
+            val t = finals.indexOf(key)
+
+            if (t > 0 && tail == 0) {
+                tail = t
+                updateComposition()
+                return
+            }
+
+            if (t > 0 && tail != 0) {
+                val combined = finalPairs[finals[tail] + key]
+
+                if (combined != null) {
+                    tail = finals.indexOf(combined)
+                    updateComposition()
+                    return
+                }
+            }
+
+            finishComposition()
+
+            if (l != -1) {
+                lead = l
+                updateComposition()
+            } else {
+                connection.commitText(key, 1)
+            }
+            return
+        }
 
         if (vowel == -1) {
             if (lead != -1) {
                 finishComposition()
             }
-            lead = l
-            updateComposition()
+
+            if (l != -1) {
+                lead = l
+                updateComposition()
+            } else {
+                connection.commitText(key, 1)
+            }
             return
         }
 
         val t = finals.indexOf(key)
+
         if (t > 0 && tail == 0) {
             tail = t
             updateComposition()
         } else if (t > 0 && tail != 0) {
             val combined = finalPairs[finals[tail] + key]
+
             if (combined != null) {
                 tail = finals.indexOf(combined)
                 updateComposition()
             } else {
                 finishComposition()
-                lead = l
-                updateComposition()
+
+                if (l != -1) {
+                    lead = l
+                    updateComposition()
+                } else {
+                    connection.commitText(key, 1)
+                }
             }
         } else {
             finishComposition()
-            lead = l
-            updateComposition()
+
+            if (l != -1) {
+                lead = l
+                updateComposition()
+            } else {
+                connection.commitText(key, 1)
+            }
         }
     }
 
@@ -776,7 +831,22 @@ class JejuKeyboardService : InputMethodService() {
                 }
             }
 
-            connection.setComposingText(archaicLead + jungseong, 1)
+            val jongseong = if (tail == 0) {
+                ""
+            } else {
+                val trailingJamo = listOf(
+                    "", "\u11A8", "\u11A9", "\u11AA", "\u11AB",
+                    "\u11AC", "\u11AD", "\u11AE", "\u11AF", "\u11B0",
+                    "\u11B1", "\u11B2", "\u11B3", "\u11B4", "\u11B5",
+                    "\u11B6", "\u11B7", "\u11B8", "\u11B9", "\u11BA",
+                    "\u11BB", "\u11BC", "\u11BD", "\u11BE", "\u11BF",
+                    "\u11C0", "\u11C1", "\u11C2"
+                )
+
+                trailingJamo.getOrElse(tail) { "" }
+            }
+
+            connection.setComposingText(archaicLead + jungseong + jongseong, 1)
             return
         }
 
