@@ -756,7 +756,7 @@ class JejuKeyboardService : InputMethodService() {
                         trailing.isNotEmpty() &&
                         trailing.first() in '\u11A8'..'\u11C2'
                     ) {
-                        trailing.firstIndex + 1
+                        1
                     } else {
                         vowelPosition + vowelText.length - start
                     }
