@@ -140,8 +140,9 @@ class JejuKeyboardService : InputMethodService() {
                 )
 
                 val weight = when (label) {
-                    "제줏말" -> 4.2f
-                    "?123", "ㄱㄴㄷ", "⇧", "⇪", "⌫", "↵", "☺" -> 1.35f
+                    "제줏말" -> 2.8f
+                    "?123", "ㄱㄴㄷ", "⇧", "⇪", "⌫", "↵", "☺" -> 1.25f
+                    ",", "." -> 0.65f
                     else -> 1f
                 }
 
@@ -184,7 +185,7 @@ class JejuKeyboardService : InputMethodService() {
                             "⇧", "⌫", "?123", "ㄱㄴㄷ", "↵", "☺", ",", "."
                         )
                         setColor(if (blue) specialColor else keyColor)
-                        cornerRadius = dp(12).toFloat()
+                        cornerRadius = dp(8).toFloat()
                         setStroke(dp(1), Color.rgb(232, 236, 241))
                     }
 
@@ -338,7 +339,9 @@ class JejuKeyboardService : InputMethodService() {
                 }
 
                 val params = LinearLayout.LayoutParams(
-                    0, dp(60), weight
+                    0,
+                    dp(54),
+                    weight
                 )
                 params.setMargins(dp(2), dp(2), dp(2), dp(2))
                 row.addView(key, params)
