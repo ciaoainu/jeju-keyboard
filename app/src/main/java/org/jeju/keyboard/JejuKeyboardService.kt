@@ -336,16 +336,17 @@ class JejuKeyboardService : InputMethodService() {
                     key.tag = "topRow"
                 }
 
-                val params = if (functionKey) {
-                    LinearLayout.LayoutParams(
-                        dp(68),
-                        dp(54)
-                    )
-                } else {
-                    LinearLayout.LayoutParams(
+                val params = when (label) {
+                    "제줏말" -> LinearLayout.LayoutParams(
                         0,
                         dp(54),
-                        if (label == "제줏말") 3.5f else 1f
+                        3.5f
+                    )
+
+                    else -> LinearLayout.LayoutParams(
+                        0,
+                        dp(54),
+                        1f
                     )
                 }
 
