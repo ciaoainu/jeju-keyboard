@@ -139,12 +139,10 @@ class JejuKeyboardService : InputMethodService() {
                     "⇧", "⌫", "?123", "ㄱㄴㄷ", "↵", "☺"
                 )
 
-                val weight = when (label) {
-                    "⇧", "⇪", "⌫", "☺", "?123", "ㄱㄴㄷ", "↵" -> 1.3f
-                    "제줏말" -> 3.6f
-                    ",", "." -> 0.65f
-                    else -> 1f
-                }
+                val functionKey = label in listOf(
+                    "⇧", "⇪", "⌫", "☺",
+                    "?123", "ㄱㄴㄷ", "↵"
+                )
 
                 val key = Button(this).apply {
                     text = when {
@@ -338,11 +336,19 @@ class JejuKeyboardService : InputMethodService() {
                     key.tag = "topRow"
                 }
 
-                val params = LinearLayout.LayoutParams(
-                    0,
-                    dp(54),
-                    weight
-                )
+                val params = if (functionKey) {
+                    LinearLayout.LayoutParams(
+                        dp(68),
+                        dp(54)
+                    )
+                } else {
+                    LinearLayout.LayoutParams(
+                        0,
+                        dp(54),
+                        if (label == "제줏말") 3.5f else 1f
+                    )
+                }
+
                 params.setMargins(dp(2), dp(2), dp(2), dp(2))
                 row.addView(key, params)
             }
