@@ -342,7 +342,6 @@ class JejuKeyboardService : InputMethodService() {
                         dp(54),
                         3.5f
                     )
-
                     else -> LinearLayout.LayoutParams(
                         0,
                         dp(54),
