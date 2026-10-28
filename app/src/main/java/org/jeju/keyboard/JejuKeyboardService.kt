@@ -26,9 +26,9 @@ class JejuKeyboardService : InputMethodService() {
     private var lastCommittedArchaicBlock = false
     private var archaicBlockText = ""
 
-    private val backgroundColor = Color.rgb(225, 239, 250)
-    private val keyColor = Color.WHITE
-    private val specialColor = Color.rgb(205, 229, 246)
+    private val backgroundColor = Color.rgb(239, 242, 246)
+    private val keyColor = Color.rgb(255, 255, 255)
+    private val specialColor = Color.rgb(211, 231, 246)
 
     // Modern Hangul composition state.
     private var lead = -1
@@ -105,7 +105,7 @@ class JejuKeyboardService : InputMethodService() {
     private fun buildKeyboard(): View {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(2, 0, 2, 0)
+            setPadding(dp(3), dp(2), dp(3), dp(2))
             setBackgroundColor(backgroundColor)
         }
 
@@ -165,10 +165,12 @@ class JejuKeyboardService : InputMethodService() {
                     textSize = when (label) {
                         "제줏말" -> 17f
                         "ㄱㄴㄷ" -> 14f
-                        else -> 19f
+                        "⇧", "⇪", "⌫", "↵" -> 23f
+                        "?123" -> 16f
+                        else -> 20f
                     }
-                    setTextColor(Color.rgb(25, 32, 38))
-                    typeface = Typeface.DEFAULT
+                    setTextColor(Color.rgb(31, 37, 43))
+                    typeface = Typeface.create("sans-serif", Typeface.NORMAL)
                     isAllCaps = false
                     minWidth = 0
                     minimumWidth = 0
@@ -181,7 +183,8 @@ class JejuKeyboardService : InputMethodService() {
                             "⇧", "⌫", "?123", "ㄱㄴㄷ", "↵", "☺", ",", "."
                         )
                         setColor(if (blue) specialColor else keyColor)
-                        cornerRadius = dp(10).toFloat()
+                        cornerRadius = dp(12).toFloat()
+                        setStroke(dp(1), Color.rgb(232, 236, 241))
                     }
 
                     
@@ -334,9 +337,11 @@ class JejuKeyboardService : InputMethodService() {
                 }
 
                 val params = LinearLayout.LayoutParams(
-                    0, dp(if (rowIndex == 3) 62 else 58), weight
+                    0,
+                    dp(if (rowIndex == 3) 62 else 58),
+                    weight
                 )
-                params.setMargins(dp(1), dp(2), dp(1), dp(2))
+                params.setMargins(dp(2), dp(2), dp(2), dp(2))
                 row.addView(key, params)
             }
 
