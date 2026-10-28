@@ -140,9 +140,13 @@ class JejuKeyboardService : InputMethodService() {
                 )
 
                 val weight = when (label) {
-                    "제줏말" -> 2.8f
-                    "?123", "ㄱㄴㄷ", "⇧", "⇪", "⌫", "↵", "☺" -> 1.25f
+                    "⇧", "⇪", "⌫", "☺",
+                    "?123", "ㄱㄴㄷ", "↵" -> 1.4f
+                    
+                    "제줏말" -> 3.4f
+                    
                     ",", "." -> 0.65f
+                    
                     else -> 1f
                 }
 
