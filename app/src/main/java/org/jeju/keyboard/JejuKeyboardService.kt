@@ -141,8 +141,7 @@ class JejuKeyboardService : InputMethodService() {
 
                 val weight = when (label) {
                     "제줏말" -> 4.2f
-                    "?123", "ㄱㄴㄷ" -> 1.6f
-                    "⇧", "⌫", "↵", "☺" -> 1.35f
+                    "?123", "ㄱㄴㄷ", "⇧", "⇪", "⌫", "↵", "☺" -> 1.35f
                     else -> 1f
                 }
 
@@ -177,6 +176,8 @@ class JejuKeyboardService : InputMethodService() {
                     minHeight = 0
                     minimumHeight = 0
                     setPadding(0, 0, 0, 0)
+                    elevation = 0f
+                    stateListAnimator = null
 
                     background = GradientDrawable().apply {
                         val blue = label in listOf(
@@ -337,9 +338,7 @@ class JejuKeyboardService : InputMethodService() {
                 }
 
                 val params = LinearLayout.LayoutParams(
-                    0,
-                    dp(if (rowIndex == 3) 62 else 58),
-                    weight
+                    0, dp(60), weight
                 )
                 params.setMargins(dp(2), dp(2), dp(2), dp(2))
                 row.addView(key, params)
@@ -370,7 +369,7 @@ class JejuKeyboardService : InputMethodService() {
             setPadding(dp(4), dp(4), dp(4), dp(4))
             background = GradientDrawable().apply {
                 setColor(Color.WHITE)
-                cornerRadius = dp(12).toFloat()
+                cornerRadius = dp(8).toFloat()
                 setStroke(dp(1), specialColor)
             }
         }
@@ -387,6 +386,8 @@ class JejuKeyboardService : InputMethodService() {
                 minHeight = 0
                 minimumHeight = 0
                 setPadding(0, 0, 0, 0)
+                elevation = 0f
+                stateListAnimator = null
                 setTextColor(Color.rgb(25, 32, 38))
                 background = GradientDrawable().apply {
                     setColor(specialColor)
