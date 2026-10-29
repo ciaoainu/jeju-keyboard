@@ -331,6 +331,12 @@ class JejuKeyboardService : InputMethodService() {
                     weight
                 )
                 params.setMargins(dp(2), dp(2), dp(2), dp(2))
+
+                if (rowIndex == 3 && (label == "," || label == ".")) {
+                    params.width = dp(0)
+                    params.weight = 1f
+                }
+                
                 row.addView(key, params)
             }
 
