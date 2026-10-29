@@ -319,11 +319,9 @@ class JejuKeyboardService : InputMethodService() {
                 if (rowIndex == 0) key.tag = "topRow"
 
                 val weight = when (label) {
-                    "⇧", "⇪", "⌫", "☺",
-                    "?123", "ㄱㄴㄷ", "↵" -> 1.5f
-
-                    "제줏말" -> 5f
-
+                    "⇧", "⇪", "⌫", "☺" -> 1.5f
+                    "?123", "ㄱㄴㄷ", "↵" -> 1.4f
+                    "제줏말" -> 5.2f
                     else -> 1f
                 }
 
