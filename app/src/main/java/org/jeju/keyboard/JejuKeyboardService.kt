@@ -128,20 +128,27 @@ class JejuKeyboardService : InputMethodService() {
             )
         }
 
+        
         rows.forEachIndexed { rowIndex, labels ->
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER
             }
 
+            // Every row uses 10 equal-width units.
+            // The third row is centered using half a unit of space on each side.
+            if (rowIndex == 2) {
+                row.addView(
+                    View(this),
+                    LinearLayout.LayoutParams(0, dp(54), 0.5f).apply {
+                        setMargins(dp(2), dp(2), dp(2), dp(2))
+                    }
+                )
+            }
+
             labels.forEach { label ->
                 val special = label in listOf(
                     "⇧", "⌫", "?123", "ㄱㄴㄷ", "↵", "☺"
-                )
-
-                val functionKey = label in listOf(
-                    "⇧", "⇪", "⌫", "☺",
-                    "?123", "ㄱㄴㄷ", "↵"
                 )
 
                 val key = Button(this).apply {
@@ -160,6 +167,7 @@ class JejuKeyboardService : InputMethodService() {
                         }
                         else -> label
                     }
+
                     textSize = when (label) {
                         "제줏말" -> 17f
                         "ㄱㄴㄷ" -> 14f
@@ -167,6 +175,7 @@ class JejuKeyboardService : InputMethodService() {
                         "?123" -> 16f
                         else -> 20f
                     }
+
                     setTextColor(Color.rgb(31, 37, 43))
                     typeface = Typeface.create("sans-serif", Typeface.NORMAL)
                     isAllCaps = false
@@ -180,15 +189,14 @@ class JejuKeyboardService : InputMethodService() {
 
                     background = GradientDrawable().apply {
                         val blue = label in listOf(
-                            "⇧", "⌫", "?123", "ㄱㄴㄷ", "↵", "☺", ",", "."
+                            "⇧", "⌫", "?123", "ㄱㄴㄷ",
+                            "↵", "☺", ",", "."
                         )
                         setColor(if (blue) specialColor else keyColor)
                         cornerRadius = dp(8).toFloat()
                         setStroke(dp(1), Color.rgb(232, 236, 241))
                     }
 
-                    
-                    
                     val touchHandler = Handler(Looper.getMainLooper())
                     var popup: PopupWindow? = null
                     var longPressTriggered = false
@@ -216,7 +224,7 @@ class JejuKeyboardService : InputMethodService() {
                         }
                     }
 
-                    setOnTouchListener { view, event ->
+                    setOnTouchListener { _, event ->
                         when (event.actionMasked) {
                             MotionEvent.ACTION_DOWN -> {
                                 longPressTriggered = false
@@ -225,13 +233,13 @@ class JejuKeyboardService : InputMethodService() {
                                 if (popupChoices.isNotEmpty()) {
                                     touchHandler.postDelayed(
                                         openPopup,
-                                        android.view.ViewConfiguration.getLongPressTimeout().toLong()
+                                        android.view.ViewConfiguration
+                                            .getLongPressTimeout().toLong()
                                     )
                                 }
                                 true
                             }
 
-                            
                             MotionEvent.ACTION_MOVE -> {
                                 val activePopup = popup
 
@@ -239,23 +247,19 @@ class JejuKeyboardService : InputMethodService() {
                                     val popupContent = activePopup.contentView
                                     val location = IntArray(2)
                                     popupContent.getLocationOnScreen(location)
-
-                                    val popupButtons =
-                                        popupContent.tag as? List<*>
+                                    val popupButtons = popupContent.tag as? List<*>
 
                                     if (popupButtons != null && popupChoices.isNotEmpty()) {
-                                        val buttonWidth = dp(48)
                                         val index = (
-                                            (event.rawX - location[0] - dp(4)) / buttonWidth
+                                            (event.rawX - location[0] - dp(4)) / dp(48)
                                         ).toInt().coerceIn(popupChoices.indices)
 
                                         popupButtons.forEachIndexed { i, item ->
-                                            val button = item as? Button ?: return@forEachIndexed
-                                            val highlighted = i == index
-
+                                            val button = item as? Button
+                                                ?: return@forEachIndexed
                                             button.background = GradientDrawable().apply {
                                                 setColor(
-                                                    if (highlighted) Color.rgb(150, 205, 240)
+                                                    if (i == index) Color.rgb(150, 205, 240)
                                                     else specialColor
                                                 )
                                                 cornerRadius = dp(8).toFloat()
@@ -263,42 +267,35 @@ class JejuKeyboardService : InputMethodService() {
                                         }
                                     }
                                 }
-
                                 true
                             }
 
                             MotionEvent.ACTION_UP -> {
                                 touchHandler.removeCallbacks(openPopup)
-
                                 val activePopup = popup
+
                                 if (longPressTriggered && activePopup != null) {
-                                    val popupContent = activePopup.contentView
                                     val location = IntArray(2)
-                                    popupContent.getLocationOnScreen(location)
+                                    activePopup.contentView.getLocationOnScreen(location)
 
                                     val index = if (popupChoices.size == 1) {
                                         0
                                     } else {
-                                        val buttonWidth = dp(48)
                                         (
-                                            (event.rawX - location[0] - dp(4)) / buttonWidth
+                                            (event.rawX - location[0] - dp(4)) / dp(48)
                                         ).toInt().coerceIn(popupChoices.indices)
                                     }
 
-                                    
                                     val selected = popupChoices[index]
 
                                     when {
                                         vowels.contains(selected) -> inputVowel(selected)
-
                                         archaicInitialJamo.containsKey(selected) -> {
                                             finishComposition()
                                             archaicLead = archaicInitialJamo[selected]
                                             updateComposition()
                                         }
-
                                         leading.contains(selected) -> inputConsonant(selected)
-
                                         else -> {
                                             finishComposition()
                                             currentInputConnection?.commitText(selected, 1)
@@ -315,7 +312,6 @@ class JejuKeyboardService : InputMethodService() {
                                 } else if (!longPressTriggered) {
                                     handleKey(label)
                                 }
-
                                 true
                             }
 
@@ -329,28 +325,28 @@ class JejuKeyboardService : InputMethodService() {
                             else -> true
                         }
                     }
-
                 }
 
-                if (rowIndex == 0) {
-                    key.tag = "topRow"
+                if (rowIndex == 0) key.tag = "topRow"
+
+                val weight = when {
+                    label == "제줏말" -> 6f
+                    rowIndex == 3 -> 1f
+                    else -> 1f
                 }
 
-                val params = when (label) {
-                    "제줏말" -> LinearLayout.LayoutParams(
-                        0,
-                        dp(54),
-                        3.5f
-                    )
-                    else -> LinearLayout.LayoutParams(
-                        0,
-                        dp(54),
-                        1f
-                    )
-                }
-
+                val params = LinearLayout.LayoutParams(0, dp(54), weight)
                 params.setMargins(dp(2), dp(2), dp(2), dp(2))
                 row.addView(key, params)
+            }
+
+            if (rowIndex == 2) {
+                row.addView(
+                    View(this),
+                    LinearLayout.LayoutParams(0, dp(54), 0.5f).apply {
+                        setMargins(dp(2), dp(2), dp(2), dp(2))
+                    }
+                )
             }
 
             root.addView(
