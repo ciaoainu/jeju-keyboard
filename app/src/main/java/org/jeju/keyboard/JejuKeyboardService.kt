@@ -135,17 +135,6 @@ class JejuKeyboardService : InputMethodService() {
                 gravity = Gravity.CENTER
             }
 
-            // Every row uses 10 equal-width units.
-            // The third row is centered using half a unit of space on each side.
-            if (rowIndex == 2) {
-                row.addView(
-                    View(this),
-                    LinearLayout.LayoutParams(0, dp(54), 0.5f).apply {
-                        setMargins(dp(2), dp(2), dp(2), dp(2))
-                    }
-                )
-            }
-
             labels.forEach { label ->
                 val special = label in listOf(
                     "⇧", "⌫", "?123", "ㄱㄴㄷ", "↵", "☺"
@@ -329,24 +318,22 @@ class JejuKeyboardService : InputMethodService() {
 
                 if (rowIndex == 0) key.tag = "topRow"
 
-                val weight = when {
-                    label == "제줏말" -> 6f
-                    rowIndex == 3 -> 1f
+                val weight = when (label) {
+                    "⇧", "⇪", "⌫", "☺",
+                    "?123", "ㄱㄴㄷ", "↵" -> 1.5f
+
+                    "제줏말" -> 5f
+
                     else -> 1f
                 }
 
-                val params = LinearLayout.LayoutParams(0, dp(54), weight)
+                val params = LinearLayout.LayoutParams(
+                    0,
+                    dp(54),
+                    weight
+                )
                 params.setMargins(dp(2), dp(2), dp(2), dp(2))
                 row.addView(key, params)
-            }
-
-            if (rowIndex == 2) {
-                row.addView(
-                    View(this),
-                    LinearLayout.LayoutParams(0, dp(54), 0.5f).apply {
-                        setMargins(dp(2), dp(2), dp(2), dp(2))
-                    }
-                )
             }
 
             root.addView(
