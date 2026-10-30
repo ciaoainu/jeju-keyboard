@@ -416,9 +416,11 @@ class JejuKeyboardService : InputMethodService() {
             location[0] + anchor.width / 2 - optionWidth / 2
         ).coerceAtLeast(0)
 
-        val y = (
-            location[1] - popupHeight - dp(4)
-        ).coerceAtLeast(0)
+        val y = if (anchor.tag == "topRow") {
+            location[1] - anchor.height - dp(4)
+        } else {
+            (location[1] - popupHeight - dp(4)).coerceAtLeast(0)
+        }
 
         popup.width = popupWidth
         popup.height = popupHeight
