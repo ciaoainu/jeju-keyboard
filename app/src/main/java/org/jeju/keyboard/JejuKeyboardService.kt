@@ -16,8 +16,22 @@ import android.widget.PopupWindow
 import android.widget.FrameLayout
 import android.os.Handler
 import android.os.Looper
-import android.graphics.Canvas
 import android.graphics.Paint
+import android.content.Context
+import android.graphics.Canvas
+
+private class RaisedLabelButton(
+    context: Context,
+    private val raiseBy: Float
+) : Button(context) {
+
+    override fun onDraw(canvas: Canvas) {
+        canvas.save()
+        canvas.translate(0f, -raiseBy)
+        super.onDraw(canvas)
+        canvas.restore()
+    }
+}
 
 class JejuKeyboardService : InputMethodService() {
 
@@ -179,7 +193,13 @@ class JejuKeyboardService : InputMethodService() {
                     "⇧", "⌫", "?123", "ㄱㄴㄷ", "↵", "☺"
                 )
 
-                val key = Button(this).apply {
+                val key = (
+                    if (label == "↵") {
+                        RaisedLabelButton(this, dp(3).toFloat())
+                    } else {
+                        Button(this)
+                    }
+                ).apply {
                     gravity = Gravity.CENTER
                     includeFontPadding = false
                     textAlignment = View.TEXT_ALIGNMENT_CENTER
