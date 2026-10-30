@@ -179,6 +179,8 @@ class JejuKeyboardService : InputMethodService() {
 
                 val key = Button(this).apply {
                     gravity = Gravity.CENTER
+                    includeFontPadding = false
+                    textAlignment = View.TEXT_ALIGNMENT_CENTER
                     text = when {
                         label == "⇧" && shiftActive -> "⇪"
                         shiftActive -> when (label) {
