@@ -192,6 +192,14 @@ class JejuKeyboardService : InputMethodService() {
             )
         }
 
+        root.addView(
+            View(this),
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(8)
+            )
+        )
+
         
         rows.forEachIndexed { rowIndex, labels ->
             val row = LinearLayout(this).apply {
