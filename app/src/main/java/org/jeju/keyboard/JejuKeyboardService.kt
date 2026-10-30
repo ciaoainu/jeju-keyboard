@@ -16,6 +16,9 @@ import android.widget.PopupWindow
 import android.widget.FrameLayout
 import android.os.Handler
 import android.os.Looper
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.BaselineShiftSpan
 
 class JejuKeyboardService : InputMethodService() {
 
@@ -198,7 +201,14 @@ class JejuKeyboardService : InputMethodService() {
                     }
 
                     if (label == "↵") {
-                        translationY = dp(10).toFloat()
+                        val arrow = SpannableString(text)
+                        arrow.setSpan(
+                            BaselineShiftSpan(-dp(3)),
+                            0,
+                            arrow.length,
+                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                        )
+                        text = arrow
                     }
 
                     textSize = when (label) {
