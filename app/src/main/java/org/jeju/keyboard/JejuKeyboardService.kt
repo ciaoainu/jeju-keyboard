@@ -248,8 +248,8 @@ class JejuKeyboardService : InputMethodService() {
                                                 ?: return@forEachIndexed
                                             button.background = GradientDrawable().apply {
                                                 setColor(
-                                                    if (i == index) Color.rgb(150, 205, 240)
-                                                    else specialColor
+                                                    if (i == index) Color.rgb(0, 101, 140)
+                                                    else keyColor
                                                 )
                                                 cornerRadius = dp(8).toFloat()
                                             }
@@ -347,26 +347,26 @@ class JejuKeyboardService : InputMethodService() {
     }
 
     
-    
-    
     private fun showCharacterPopup(
         anchor: View,
         choices: List<String>
     ): PopupWindow {
+        val selectionColor = Color.rgb(0, 101, 140) // #00658C
+
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
             setPadding(dp(4), dp(4), dp(4), dp(4))
             background = GradientDrawable().apply {
-                setColor(Color.WHITE)
+                setColor(keyColor)
                 cornerRadius = dp(8).toFloat()
-                setStroke(dp(1), specialColor)
+                setStroke(dp(1), Color.rgb(232, 236, 241))
             }
         }
 
         val popupButtons = mutableListOf<Button>()
 
-        choices.forEach { character ->
+        choices.forEachIndexed { index, character ->
             val button = Button(this).apply {
                 text = character
                 textSize = 23f
@@ -379,8 +379,9 @@ class JejuKeyboardService : InputMethodService() {
                 elevation = 0f
                 stateListAnimator = null
                 setTextColor(Color.rgb(25, 32, 38))
+
                 background = GradientDrawable().apply {
-                    setColor(specialColor)
+                    setColor(if (index == 0) selectionColor else keyColor)
                     cornerRadius = dp(8).toFloat()
                 }
             }
@@ -404,7 +405,6 @@ class JejuKeyboardService : InputMethodService() {
             elevation = dp(8).toFloat()
         }
 
-        
         val location = IntArray(2)
         anchor.getLocationInWindow(location)
 
@@ -412,20 +412,13 @@ class JejuKeyboardService : InputMethodService() {
         val popupWidth = optionWidth * choices.size + dp(16)
         val popupHeight = dp(60)
 
-        // Keep the existing horizontal alignment.
         val x = (
             location[0] + anchor.width / 2 - optionWidth / 2
         ).coerceAtLeast(0)
 
-        val extraUpwardOffset = 0
-
-        val y = if (anchor.tag == "topRow") {
+        val y = (
             location[1] - popupHeight - dp(4)
-        } else {
-            (
-                location[1] - popupHeight - dp(4)
-            ).coerceAtLeast(0)
-        }
+        ).coerceAtLeast(0)
 
         popup.width = popupWidth
         popup.height = popupHeight
@@ -437,7 +430,6 @@ class JejuKeyboardService : InputMethodService() {
             y
         )
 
-        // Return the popup buttons to the touch handler for highlighting.
         content.tag = popupButtons
 
         return popup
