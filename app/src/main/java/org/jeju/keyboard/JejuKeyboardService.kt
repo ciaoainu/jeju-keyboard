@@ -198,7 +198,7 @@ class JejuKeyboardService : InputMethodService() {
                     }
 
                     if (label == "↵") {
-                        translationY = dp(-10).toFloat()
+                        translationY = dp(10).toFloat()
                     }
 
                     textSize = when (label) {
