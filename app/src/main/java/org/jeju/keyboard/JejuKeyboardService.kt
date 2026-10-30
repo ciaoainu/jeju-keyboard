@@ -458,23 +458,25 @@ class JejuKeyboardService : InputMethodService() {
             "⌫" -> backspace()
 
             "↵" -> {
-                finishComposition()
-                val action = currentInputEditorInfo?.imeOptions
-                    ?.and(EditorInfo.IME_MASK_ACTION)
-                    ?: EditorInfo.IME_ACTION_NONE
+                val connection = currentInputConnection
+                val imeOptions = currentInputEditorInfo?.imeOptions
+                    ?: android.view.inputmethod.EditorInfo.IME_ACTION_NONE
 
-                if (action != EditorInfo.IME_ACTION_NONE &&
-                    action != EditorInfo.IME_ACTION_UNSPECIFIED &&
-                    action != EditorInfo.IME_ACTION_PREVIOUS
-                ) {
-                    connection.performEditorAction(action)
-                } else {
-                    connection.sendKeyEvent(
-                        KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER)
-                    )
-                    connection.sendKeyEvent(
-                        KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER)
-                    )
+                val action = imeOptions and
+                    android.view.inputmethod.EditorInfo.IME_MASK_ACTION
+
+                when (action) {
+                    android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH,
+                    android.view.inputmethod.EditorInfo.IME_ACTION_GO,
+                    android.view.inputmethod.EditorInfo.IME_ACTION_SEND,
+                    android.view.inputmethod.EditorInfo.IME_ACTION_DONE,
+                    android.view.inputmethod.EditorInfo.IME_ACTION_NEXT -> {
+                        connection?.performEditorAction(action)
+                    }
+
+                    else -> {
+                        connection?.commitText("\n", 1)
+                    }
                 }
             }
 
