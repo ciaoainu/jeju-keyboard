@@ -196,7 +196,7 @@ class JejuKeyboardService : InputMethodService() {
             View(this),
             LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                dp(8)
+                dp(5)
             )
         )
 
