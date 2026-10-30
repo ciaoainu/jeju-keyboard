@@ -182,9 +182,6 @@ class JejuKeyboardService : InputMethodService() {
                     includeFontPadding = false
                     textAlignment = View.TEXT_ALIGNMENT_CENTER
                     text = when {
-                        if (label == "↵") {
-                            translationY = -dp(3).toFloat()
-                        }
                         label == "⇧" && shiftActive -> "⇪"
                         shiftActive -> when (label) {
                             "ㅂ" -> "ㅃ"
@@ -198,6 +195,10 @@ class JejuKeyboardService : InputMethodService() {
                             else -> label
                         }
                         else -> label
+                    }
+
+                    if (label == "↵") {
+                        translationY = -dp(3).toFloat()
                     }
 
                     textSize = when (label) {
