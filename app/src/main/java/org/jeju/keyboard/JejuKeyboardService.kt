@@ -757,6 +757,12 @@ class JejuKeyboardService : InputMethodService() {
         if (archaicLead != null) {
             // Complete the obsolete initial with its first vowel.
             if (vowel == -1) {
+                if (key == "ㆍ" || key == "ᆢ") {
+                    vowel = newVowel
+                    updateComposition()
+                    return
+                }
+                
                 vowel = newVowel
                 updateComposition()
                 return
