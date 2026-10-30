@@ -158,11 +158,11 @@ class JejuKeyboardService : InputMethodService() {
                     }
 
                     textSize = when (label) {
-                        "제줏말" -> 17f
+                        "제줏말" -> 15f
                         "ㄱㄴㄷ" -> 14f
                         "⇧", "⇪", "⌫", "↵" -> 23f
                         "?123" -> 16f
-                        else -> 20f
+                        else -> 22f
                     }
 
                     setTextColor(Color.rgb(31, 37, 43))
