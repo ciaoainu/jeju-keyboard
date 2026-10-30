@@ -231,7 +231,12 @@ class JejuKeyboardService : InputMethodService() {
                     }
 
                     textSize = if (emojiMode) {
-                        28f
+                        when (label) {
+                            "ㄱㄴㄷ" -> 17f
+                            "제줏말" -> 21f
+                            "⌫" -> 24f
+                            else -> 23f
+                        }
                     } else {
                         when (label) {
                             "제줏말" -> 15f
@@ -432,7 +437,7 @@ class JejuKeyboardService : InputMethodService() {
 
                 val params = LinearLayout.LayoutParams(
                     0,
-                    dp(54),
+                    dp(if (emojiMode) 48 else 54),
                     weight
                 )
                 params.setMargins(dp(2), dp(2), dp(2), dp(2))
