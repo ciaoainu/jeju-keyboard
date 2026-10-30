@@ -196,7 +196,7 @@ class JejuKeyboardService : InputMethodService() {
                     textSize = when (label) {
                         "제줏말" -> 15f
                         "ㄱㄴㄷ" -> 14f
-                        "↵" -> 27f
+                        "↵" -> 32f
                         "⇧", "⇪", "⌫", "↵" -> 23f
                         "?123" -> 16f
                         else -> 22f
