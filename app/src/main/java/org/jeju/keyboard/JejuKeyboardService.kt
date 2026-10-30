@@ -196,7 +196,7 @@ class JejuKeyboardService : InputMethodService() {
                     textSize = when (label) {
                         "제줏말" -> 15f
                         "ㄱㄴㄷ" -> 14f
-                        "↵" -> 32f
+                        "↵" -> 40f
                         "⇧", "⇪", "⌫", "↵" -> 23f
                         "?123" -> 16f
                         else -> 22f
@@ -757,12 +757,6 @@ class JejuKeyboardService : InputMethodService() {
         if (archaicLead != null) {
             // Complete the obsolete initial with its first vowel.
             if (vowel == -1) {
-                if (key == "ㆍ" || key == "ᆢ") {
-                    vowel = newVowel
-                    updateComposition()
-                    return
-                }
-                
                 vowel = newVowel
                 updateComposition()
                 return
