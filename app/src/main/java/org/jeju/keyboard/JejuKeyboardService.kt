@@ -232,8 +232,8 @@ class JejuKeyboardService : InputMethodService() {
 
                     textSize = if (emojiMode) {
                         when (label) {
-                            "ㄱㄴㄷ" -> 17f
-                            "제줏말" -> 21f
+                            "ㄱㄴㄷ" -> 20f
+                            "제줏말" -> 15f
                             "⌫" -> 24f
                             else -> 23f
                         }
