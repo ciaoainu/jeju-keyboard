@@ -317,6 +317,7 @@ class JejuKeyboardService : InputMethodService() {
                             }
 
                             MotionEvent.ACTION_UP -> {
+                                touchHandler.removeCallbacks(openPopup)
                                 backspaceHeld = false
                                 touchHandler.removeCallbacks(backspaceRepeat)
 
@@ -367,6 +368,7 @@ class JejuKeyboardService : InputMethodService() {
                             }
 
                             MotionEvent.ACTION_CANCEL -> {
+                                touchHandler.removeCallbacks(openPopup)
                                 backspaceHeld = false
                                 touchHandler.removeCallbacks(backspaceRepeat)
                                 touchHandler.removeCallbacks(openPopup)
