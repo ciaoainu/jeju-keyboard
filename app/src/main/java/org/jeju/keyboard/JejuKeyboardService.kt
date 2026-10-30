@@ -250,13 +250,28 @@ class JejuKeyboardService : InputMethodService() {
                         }
                     }
 
+                    var backspaceHeld = false
+
+                    val backspaceRepeat = object : Runnable {
+                        override fun run() {
+                            if (!backspaceHeld) return
+
+                            handleKey("⌫")
+                            touchHandler.postDelayed(this, 65L)
+                        }
+                    }
+
                     setOnTouchListener { _, event ->
                         when (event.actionMasked) {
                             MotionEvent.ACTION_DOWN -> {
                                 longPressTriggered = false
                                 popup = null
 
-                                if (popupChoices.isNotEmpty()) {
+                                if (label == "⌫") {
+                                    backspaceHeld = true
+                                    handleKey("⌫")
+                                    touchHandler.postDelayed(backspaceRepeat, 400L)
+                                } else if (popupChoices.isNotEmpty()) {
                                     touchHandler.postDelayed(
                                         openPopup,
                                         android.view.ViewConfiguration
@@ -297,6 +312,8 @@ class JejuKeyboardService : InputMethodService() {
                             }
 
                             MotionEvent.ACTION_UP -> {
+                                backspaceHeld = false
+                                touchHandler.removeCallbacks(backspaceRepeat)
                                 touchHandler.removeCallbacks(openPopup)
                                 val activePopup = popup
 
@@ -335,13 +352,15 @@ class JejuKeyboardService : InputMethodService() {
                                         shiftActive = false
                                         setInputView(buildKeyboard())
                                     }
-                                } else if (!longPressTriggered) {
+                                } else if (!longPressTriggered && label != "⌫") {
                                     handleKey(label)
                                 }
                                 true
                             }
 
                             MotionEvent.ACTION_CANCEL -> {
+                                backspaceHeld = false
+                                touchHandler.removeCallbacks(backspaceRepeat)
                                 touchHandler.removeCallbacks(openPopup)
                                 popup?.dismiss()
                                 popup = null
@@ -1023,6 +1042,13 @@ class JejuKeyboardService : InputMethodService() {
     
     private fun backspace() {
         val connection = currentInputConnection ?: return
+        val selectedText = connection.getSelectedText(0)
+
+        if (!selectedText.isNullOrEmpty()) {
+            connection.commitText("", 1)
+            clearComposition()
+            return
+        }
 
         // Keep normal editing behavior for a syllable still being composed.
         if (tail != 0) {
