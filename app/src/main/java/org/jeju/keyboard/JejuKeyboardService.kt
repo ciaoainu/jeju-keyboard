@@ -25,6 +25,7 @@ class JejuKeyboardService : InputMethodService() {
     private var lastShiftTap = 0L
     private var lastCommittedArchaicBlock = false
     private var archaicBlockText = ""
+    private var activeCharacterPopup: PopupWindow? = null
 
     private val backgroundColor = Color.rgb(239, 242, 246)
     private val keyColor = Color.rgb(255, 255, 255)
@@ -97,6 +98,7 @@ class JejuKeyboardService : InputMethodService() {
     override fun onCreateInputView(): View = buildKeyboard()
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
+        dismissCharacterPopup()
         super.onStartInputView(info, restarting)
         clearComposition()
         numberMode = false
@@ -267,6 +269,7 @@ class JejuKeyboardService : InputMethodService() {
                         when (event.actionMasked) {
                             MotionEvent.ACTION_DOWN -> {
                                 longPressTriggered = false
+                                dismissCharacterPopup()
                                 popup = null
 
                                 if (label == "⌫") {
@@ -350,7 +353,7 @@ class JejuKeyboardService : InputMethodService() {
                                         }
                                     }
 
-                                    activePopup.dismiss()
+                                    dismissCharacterPopup()
                                     popup = null
 
                                     if (!capsLock) {
@@ -367,7 +370,7 @@ class JejuKeyboardService : InputMethodService() {
                                 backspaceHeld = false
                                 touchHandler.removeCallbacks(backspaceRepeat)
                                 touchHandler.removeCallbacks(openPopup)
-                                popup?.dismiss()
+                                dismissCharacterPopup()
                                 popup = null
                                 true
                             }
@@ -407,7 +410,11 @@ class JejuKeyboardService : InputMethodService() {
         return root
     }
 
-    
+    private fun dismissCharacterPopup() {
+        activeCharacterPopup?.dismiss()
+        activeCharacterPopup = null
+    }
+
     private fun showCharacterPopup(
         anchor: View,
         choices: List<String>
@@ -492,6 +499,8 @@ class JejuKeyboardService : InputMethodService() {
             x,
             y
         )
+        
+        activeCharacterPopup = popup
 
         content.tag = popupButtons
 
