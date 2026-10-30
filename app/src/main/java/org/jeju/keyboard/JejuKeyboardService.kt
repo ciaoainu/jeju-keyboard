@@ -102,6 +102,41 @@ class JejuKeyboardService : InputMethodService() {
         numberMode = false
     }
 
+    override fun onUpdateSelection(
+        oldSelStart: Int,
+        oldSelEnd: Int,
+        newSelStart: Int,
+        newSelEnd: Int,
+        candidatesStart: Int,
+        candidatesEnd: Int
+    ) {
+        super.onUpdateSelection(
+            oldSelStart,
+            oldSelEnd,
+            newSelStart,
+            newSelEnd,
+            candidatesStart,
+            candidatesEnd
+        )
+
+        // Nothing to commit if no Korean composition is active.
+        if (lead == -1 && archaicLead == null) return
+
+        // We need a valid composing-text range to detect cursor movement.
+        if (candidatesStart < 0 || candidatesEnd < 0) return
+
+        // Keep composing while the cursor remains at the end of the syllable.
+        val cursorAtCompositionEnd =
+            newSelStart == newSelEnd &&
+            newSelStart == candidatesEnd
+
+        if (!cursorAtCompositionEnd) {
+            // Clear our state first to prevent repeated commits.
+            clearComposition()
+            currentInputConnection?.finishComposingText()
+        }
+    }
+
     private fun buildKeyboard(): View {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
