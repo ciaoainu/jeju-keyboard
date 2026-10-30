@@ -16,6 +16,40 @@ import android.widget.PopupWindow
 import android.widget.FrameLayout
 import android.os.Handler
 import android.os.Looper
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.ReplacementSpan
+import android.graphics.Canvas
+import android.graphics.Paint
+
+private class RaisedTextSpan(
+    private val offset: Float
+) : ReplacementSpan() {
+
+    override fun getSize(
+        paint: Paint,
+        text: CharSequence,
+        start: Int,
+        end: Int,
+        fm: Paint.FontMetricsInt?
+    ): Int {
+        return paint.measureText(text, start, end).toInt()
+    }
+
+    override fun draw(
+        canvas: Canvas,
+        text: CharSequence,
+        start: Int,
+        end: Int,
+        x: Float,
+        top: Int,
+        y: Int,
+        bottom: Int,
+        paint: Paint
+    ) {
+        canvas.drawText(text, start, end, x, y - offset, paint)
+    }
+}
 
 class JejuKeyboardService : InputMethodService() {
 
@@ -195,6 +229,17 @@ class JejuKeyboardService : InputMethodService() {
                             else -> label
                         }
                         else -> label
+                    }
+
+                    if (label == "↵") {
+                        val arrow = SpannableString(text)
+                        arrow.setSpan(
+                            RaisedTextSpan(dp(3).toFloat()),
+                            0,
+                            arrow.length,
+                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                        )
+                        text = arrow
                     }
 
                     textSize = when (label) {
