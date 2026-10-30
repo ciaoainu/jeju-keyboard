@@ -195,7 +195,7 @@ class JejuKeyboardService : InputMethodService() {
 
                 val key = (
                     if (label == "↵") {
-                        RaisedLabelButton(this, dp(3).toFloat())
+                        RaisedLabelButton(this, dp(10).toFloat())
                     } else {
                         Button(this)
                     }
