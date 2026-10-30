@@ -36,6 +36,7 @@ private class RaisedLabelButton(
 class JejuKeyboardService : InputMethodService() {
 
     private var numberMode = false
+    private var emojiMode = false
     private var shiftActive = false
     private var capsLock = false
     private var lastShiftTap = 0L
@@ -118,6 +119,7 @@ class JejuKeyboardService : InputMethodService() {
         super.onStartInputView(info, restarting)
         clearComposition()
         numberMode = false
+        emojiMode = false
     }
 
     override fun onUpdateSelection(
@@ -162,15 +164,24 @@ class JejuKeyboardService : InputMethodService() {
             setBackgroundColor(backgroundColor)
         }
 
-        val rows = if (numberMode) {
-            listOf(
+        val rows = when {
+            emojiMode -> listOf(
+                listOf("🙂", "😎", "😍", "🥰", "😘", "🥺", "🥹", "🥲"),
+                listOf("😭", "😂", "🤣", "😆", "😅", "😳", "😴", "😱"),
+                listOf("🤔", "👋", "👏", "👍", "👎", "🙏", "🙇‍♀️", "🙇‍♂️"),
+                listOf("🙆‍♀️", "🙆‍♂️", "💪", "🫶", "❤️", "💕", "💗", "💖"),
+                listOf("💦", "✨", "🔥", "🎉", "🥳", "😹", "🌸", "😺"),
+                listOf("ㄱㄴㄷ", "제줏말", "⌫")
+            )
+            
+            numberMode -> listOf(
                 listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "0"),
                 listOf("@", "#", "₩", "~", "_", "-", "+", "(", ")", "/"),
                 listOf("☺", "*", "\"", "'", ":", ";", "!", "?", "⌫"),
                 listOf("ㄱㄴㄷ", ",", "제줏말", ".", "↵")
             )
-        } else {
-            listOf(
+            
+            else -> listOf(
                 listOf("ㅂ", "ㅈ", "ㄷ", "ㄱ", "ㅅ",
                     "ㅛ", "ㅕ", "ㅑ", "ㅐ", "ㅔ"),
                 listOf("ㅁ", "ㄴ", "ㅇ", "ㄹ", "ㅎ",
@@ -219,13 +230,17 @@ class JejuKeyboardService : InputMethodService() {
                         else -> label
                     }
 
-                    textSize = when (label) {
-                        "제줏말" -> 15f
-                        "ㄱㄴㄷ" -> 14f
-                        "↵" -> 40f
-                        "⇧", "⇪", "⌫", "↵" -> 23f
-                        "?123" -> 16f
-                        else -> 22f
+                    textSize = if (emojiMode) {
+                        28f
+                    } else {
+                        when (label) {
+                            "제줏말" -> 15f
+                            "ㄱㄴㄷ" -> 14f
+                            "↵" -> 40f
+                            "⇧", "⇪", "⌫", "↵" -> 23f
+                            "?123" -> 16f
+                            else -> 22f
+                        }
                     }
 
                     setTextColor(Color.rgb(31, 37, 43))
@@ -539,12 +554,14 @@ class JejuKeyboardService : InputMethodService() {
         when (key) {
             "?123" -> {
                 finishComposition()
+                emojiMode = false
                 numberMode = true
                 setInputView(buildKeyboard())
             }
 
             "ㄱㄴㄷ" -> {
                 finishComposition()
+                emojiMode = false
                 numberMode = false
                 setInputView(buildKeyboard())
             }
@@ -628,7 +645,9 @@ class JejuKeyboardService : InputMethodService() {
 
             "☺" -> {
                 finishComposition()
-                connection.commitText("☺", 1)
+                numberMode = false
+                emojiMode = true
+                setInputView(buildKeyboard())
             }
 
             
