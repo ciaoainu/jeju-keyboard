@@ -465,18 +465,23 @@ class JejuKeyboardService : InputMethodService() {
                 val action = imeOptions and
                     android.view.inputmethod.EditorInfo.IME_MASK_ACTION
 
-                when (action) {
-                    android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH,
-                    android.view.inputmethod.EditorInfo.IME_ACTION_GO,
-                    android.view.inputmethod.EditorInfo.IME_ACTION_SEND,
-                    android.view.inputmethod.EditorInfo.IME_ACTION_DONE,
-                    android.view.inputmethod.EditorInfo.IME_ACTION_NEXT -> {
-                        connection?.performEditorAction(action)
-                    }
-
-                    else -> {
-                        connection?.commitText("\n", 1)
-                    }
+                if (action == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
+                    connection?.performEditorAction(
+                        android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH
+                    )
+                } else {
+                    connection?.sendKeyEvent(
+                        android.view.KeyEvent(
+                            android.view.KeyEvent.ACTION_DOWN,
+                            android.view.KeyEvent.KEYCODE_ENTER
+                        )
+                    )
+                    connection?.sendKeyEvent(
+                        android.view.KeyEvent(
+                            android.view.KeyEvent.ACTION_UP,
+                            android.view.KeyEvent.KEYCODE_ENTER
+                        )
+                    )
                 }
             }
 
