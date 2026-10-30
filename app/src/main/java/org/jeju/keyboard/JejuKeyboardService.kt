@@ -251,11 +251,13 @@ class JejuKeyboardService : InputMethodService() {
                     }
 
                     var backspaceHeld = false
+                    var backspaceRepeated = false
 
                     val backspaceRepeat = object : Runnable {
                         override fun run() {
                             if (!backspaceHeld) return
 
+                            backspaceRepeated = true
                             handleKey("⌫")
                             touchHandler.postDelayed(this, 65L)
                         }
@@ -269,7 +271,7 @@ class JejuKeyboardService : InputMethodService() {
 
                                 if (label == "⌫") {
                                     backspaceHeld = true
-                                    handleKey("⌫")
+                                    backspaceRepeated = false
                                     touchHandler.postDelayed(backspaceRepeat, 400L)
                                 } else if (popupChoices.isNotEmpty()) {
                                     touchHandler.postDelayed(
@@ -314,7 +316,10 @@ class JejuKeyboardService : InputMethodService() {
                             MotionEvent.ACTION_UP -> {
                                 backspaceHeld = false
                                 touchHandler.removeCallbacks(backspaceRepeat)
-                                touchHandler.removeCallbacks(openPopup)
+
+                                if (label == "⌫" && !backspaceRepeated) {
+                                    handleKey("⌫")
+                                }
                                 val activePopup = popup
 
                                 if (longPressTriggered && activePopup != null) {
