@@ -232,15 +232,15 @@ class JejuKeyboardService : InputMethodService() {
 
                     textSize = if (emojiMode) {
                         when (label) {
-                            "ㄱㄴㄷ" -> 18f
-                            "제줏말" -> 13f
+                            "ㄱㄴㄷ" -> 19f
+                            "제줏말" -> 14f
                             "⌫" -> 24f
                             else -> 23f
                         }
                     } else {
                         when (label) {
                             "제줏말" -> 15f
-                            "ㄱㄴㄷ" -> 15f
+                            "ㄱㄴㄷ" -> 16f
                             "↵" -> 40f
                             "⇧", "⇪", "⌫", "↵" -> 23f
                             "?123" -> 16f
