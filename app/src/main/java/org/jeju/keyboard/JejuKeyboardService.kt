@@ -973,7 +973,7 @@ class JejuKeyboardService : InputMethodService() {
                 ?.key ?: currentArchaicLead
 
             val vowelText = when (vowel) {
-                in 0..20 -> vowels.getOrNull(vowel)
+                in vowels.indices -> vowels.getOrNull(vowel)
                 else -> null
             }
 
